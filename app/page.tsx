@@ -43,10 +43,42 @@ export default function Home() {
   const { timezone, setTimezone } = useTimezone();
   const { language, setLanguage, t } = useLanguage();
 
+  // Track loading states
+  const [isAppNameLoaded, setIsAppNameLoaded] = useState(false)
+  const [isAppIconLoaded, setIsAppIconLoaded] = useState(false)
+
   const router = useRouter()
   const searchParams = useSearchParams()
   const selectedTaskId = searchParams.get("task")
   const currentPage = searchParams.get("page")
+
+  // Track current path for navigation detection
+  const [currentPath, setCurrentPath] = useState('')
+
+  // Update title and favicon when path changes
+  useEffect(() => {
+    const newPath = window.location.pathname + window.location.search
+    if (currentPath !== newPath && currentPath !== '') {
+      // Path has changed, reapply title and favicon
+      if (isAppNameLoaded && appName && appName !== "Tasklytics") {
+        setTimeout(() => {
+          document.title = appName
+        }, 100)
+      }
+
+      if (isAppIconLoaded && appIcon && appIcon !== "/logo.webp") {
+        setTimeout(() => {
+          const favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement ||
+                         document.querySelector('link[rel="shortcut icon"]') as HTMLLinkElement
+          if (favicon) {
+            favicon.href = appIcon
+            favicon.setAttribute('href', favicon.href)
+          }
+        }, 100)
+      }
+    }
+    setCurrentPath(newPath)
+  }, [searchParams, isAppNameLoaded, isAppIconLoaded, appName, appIcon, currentPath])
 
   useEffect(() => {
     const savedView = localStorage.getItem("currentView") as ViewType
@@ -63,21 +95,23 @@ export default function Home() {
     // Load app name from IndexedDB
     const loadAppName = async () => {
       const storedAppName = await settingsService.getAppName()
-      if (storedAppName) {
+      if (storedAppName && storedAppName !== "Tasklytics") {
         setAppName(storedAppName)
       }
+      setIsAppNameLoaded(true)
     }
     loadAppName()
 
     // Load app icon from IndexedDB
     const loadAppIcon = async () => {
       const storedAppIcon = await settingsService.getAppIcon()
-      if (storedAppIcon) {
+      if (storedAppIcon && storedAppIcon !== "/logo.webp") {
         setAppIcon(storedAppIcon)
       } else {
-        // Set default app icon if not found in IndexedDB
+        // Keep default app icon if not found or if it's the default
         setAppIcon("/logo.webp")
       }
+      setIsAppIconLoaded(true)
     }
     loadAppIcon()
 
@@ -102,12 +136,86 @@ export default function Home() {
     }
   }, [selectedStatus])
 
+
+
   useEffect(() => {
     const saveAppName = async () => {
-      await settingsService.setAppName(appName)
+      if (isAppNameLoaded) {
+        await settingsService.setAppName(appName)
+      }
     }
     saveAppName()
-  }, [appName])
+  }, [appName, isAppNameLoaded])
+
+  // Update document title when appName changes (only after initial load)
+  useEffect(() => {
+    // Only update if we have a custom app name (not the default) and it's loaded
+    if (isAppNameLoaded && appName && appName !== "Tasklytics") {
+      const updateTitle = () => {
+        document.title = appName
+      }
+      // Update immediately
+      updateTitle()
+      // Also update after a short delay to ensure it persists after navigation
+      const timeoutId = setTimeout(updateTitle, 100)
+      return () => clearTimeout(timeoutId)
+    }
+  }, [appName, isAppNameLoaded])
+
+  // Ensure title and favicon persist across page navigation
+  useEffect(() => {
+    const handleRouteChange = () => {
+      if (isAppNameLoaded && appName && appName !== "Tasklytics") {
+        setTimeout(() => {
+          document.title = appName
+        }, 50)
+      }
+
+      if (isAppIconLoaded && appIcon && appIcon !== "/logo.webp") {
+        setTimeout(() => {
+          const favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement ||
+                         document.querySelector('link[rel="shortcut icon"]') as HTMLLinkElement
+          if (favicon) {
+            favicon.href = appIcon
+            favicon.setAttribute('href', favicon.href)
+          }
+        }, 50)
+      }
+    }
+
+    // Listen for navigation events
+    window.addEventListener('popstate', handleRouteChange)
+    return () => window.removeEventListener('popstate', handleRouteChange)
+  }, [appName, appIcon, isAppNameLoaded, isAppIconLoaded])
+
+  // Update favicon when appIcon changes (only after initial load)
+  useEffect(() => {
+    // Only update if we have a custom app icon (not the default) and it's loaded
+    if (isAppIconLoaded && appIcon && appIcon !== "/logo.webp") {
+      const updateFavicon = () => {
+        // Try different selectors for favicon
+        const favicon = document.querySelector('link[rel="icon"]') as HTMLLinkElement ||
+                       document.querySelector('link[rel="shortcut icon"]') as HTMLLinkElement
+
+        if (favicon) {
+          favicon.href = appIcon
+          // Force browser to reload the favicon
+          favicon.setAttribute('href', favicon.href)
+        } else {
+          // If no favicon link exists, create one
+          const newFavicon = document.createElement('link')
+          newFavicon.rel = 'icon'
+          newFavicon.href = appIcon
+          document.head.appendChild(newFavicon)
+        }
+      }
+
+      // Update immediately and after a delay to ensure it works
+      updateFavicon()
+      const timeoutId = setTimeout(updateFavicon, 100)
+      return () => clearTimeout(timeoutId)
+    }
+  }, [appIcon, isAppIconLoaded])
 
   useEffect(() => {
     const initialize = async () => {

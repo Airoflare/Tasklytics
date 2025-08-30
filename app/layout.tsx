@@ -11,7 +11,10 @@ import { AppContentWrapper } from "@/components/app-content-wrapper";
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Tasklytics",
+  title: {
+    default: "Tasklytics",
+    template: "%s"
+  },
   description: "A simple task management app that runs entirely on the browser",
   manifest: "/manifest.json"
 }
@@ -32,6 +35,7 @@ export default function RootLayout({
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <link rel="apple-touch-icon" href="/logo.webp" />
+        <link rel="icon" href="/favicon.ico" />
         <link rel="manifest" href="/manifest.json" />
         <script suppressHydrationWarning dangerouslySetInnerHTML={{
           __html: `

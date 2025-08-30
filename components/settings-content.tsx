@@ -35,7 +35,10 @@ interface SettingsContentProps {
   onPriorityCreate: (priorityData: Partial<Priority>) => Promise<void>
   onPriorityUpdate: (priorityId: string, updates: Partial<Priority>) => Promise<void>
   onPriorityDelete: (priorityId: string) => Promise<void>
-  }
+  onPriorityReorder: (reorderedPriorities: Priority[]) => Promise<void>
+  onStatusSelect: (statusId: string | null) => void
+  onSettingsClick: () => void
+}
 
 export function SettingsContent({
   statuses,
@@ -332,7 +335,7 @@ export function SettingsContent({
                     <div className="p-4 rounded-lg border text-[#737373] dark:text-[#E8E7EA] border-black/5 bg-black/5 dark:bg-[#090909] dark:border-[#262626]">
                       <h3 className="text-[#737373] dark:text-[#E8E7EA] text-sm font-medium mb-2">{t("Language")}</h3>
                       <p className="text-[#737373] dark:text-[#9E9E9E] text-xs mb-3">{t("Choose your preferred language for the interface.")}</p>
-                      <Select value={language} onValueChange={async (value) => { await setLanguage(value); }}>
+                      <Select value={language} onValueChange={async (value) => { await setLanguage(value as LanguageKey); }}>
                         <SelectTrigger className="border-black/10 text-black dark:text-white/90 h-9 text-sm bg-black/5 dark:bg-black dark:border-[#262626]">
                           <SelectValue />
                         </SelectTrigger>

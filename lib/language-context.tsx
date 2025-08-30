@@ -8,7 +8,7 @@ import englishTranslations from "../language/english.json"
 import spanishTranslations from "../language/spanish.json"
 import germanTranslations from "../language/german.json"
 
-type LanguageKey = "en" | "es" | "de"
+export type LanguageKey = "en" | "es" | "de"
 
 interface Translations {
   name: string;
