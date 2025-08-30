@@ -141,3 +141,130 @@
   vertical-align: top;
   white-space: normal;
 }
+
+/* Custom prose styles for better markdown rendering */
+.prose hr {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.prose h1 {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose h2 {
+  margin-top: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose h3 {
+  margin-top: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.prose p {
+  margin-bottom: 0.5rem;
+}
+
+.prose ul, .prose ol {
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose li {
+  margin-bottom: 0.125rem;
+}
+
+
+/* Code block copy button */
+.code-block-container {
+  position: relative;
+}
+
+.code-block-copy-btn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(0, 0, 0, 0.5);
+  border: none;
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  color: white;
+  font-size: 0.75rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.code-block-container:hover .code-block-copy-btn {
+  opacity: 1;
+}
+
+.code-block-copy-btn:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* Fix line breaks in markdown */
+.prose p {
+  white-space: pre-wrap;
+}
+
+.prose br {
+  display: block;
+  content: "";
+  margin-bottom: 0.5rem;
+}
+
+.prose pre {
+  border: none !important;
+}
+
+/* Override Tailwind Typography for our custom code blocks */
+.prose pre[class*="language-"] {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 2.5rem 1.5rem 1.5rem 1.5rem !important;
+  margin: 0 !important;
+}
+
+.prose pre[class*="language-"] code {
+  background: transparent !important;
+  color: inherit !important;
+}
+
+/* Nuclear override for Tailwind Typography CSS variables */
+.prose pre,
+.prose pre code {
+  --tw-prose-pre-bg: transparent !important;
+  --tw-prose-pre-code: inherit !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: inherit !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Specific override for our custom code block */
+.custom-code-block pre {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 2.5rem 1.5rem 1.5rem 1.5rem !important;
+  margin: 0 !important;
+  --tw-prose-pre-bg: transparent !important;
+  --tw-prose-pre-code: inherit !important;
+}
+
+.custom-code-block pre code {
+  background: transparent !important;
+  color: inherit !important;
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, "SF Mono", Monaco, Inconsolata, "Roboto Mono", "Source Code Pro", monospace) !important;
+  --tw-prose-pre-code: inherit !important;
+  
+}

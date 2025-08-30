@@ -1,11 +1,11 @@
 "use client"
 
-import type React from "react"
+import React, { useRef } from "react"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { X, ChevronsLeft, ChevronUp, ChevronDown, Trash2, Plus } from "lucide-react"
+import { X, ChevronsLeft, ChevronUp, ChevronDown, Trash2, Edit3, Eye, Copy, Check, Image } from "lucide-react"
 import type { Task, Status, Tag, Priority } from "@/lib/types"
 import { saveAttachment, getAttachment, deleteAttachment } from "@/lib/attachment-db"
 import { formatDistanceToNow } from "date-fns"
@@ -14,6 +14,9 @@ import { format } from 'date-fns-tz/format'
 import { useTimezone } from "@/lib/timezone-context"
 import { useLanguage } from "@/lib/language-context"
 import TextareaAutosize from "react-textarea-autosize"
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import { CodeBlock } from './code-block'
 
 interface TaskDetailViewProps {
   task: Task | null | undefined
@@ -38,12 +41,16 @@ export function TaskDetailView({
   tags,
   priorities,
 }: TaskDetailViewProps) {
-  const [editedTask, setEditedTask] = useState<Task | null>(task)
+  const [editedTask, setEditedTask] = useState<Task | null>(task || null)
   const [newlyAddedAttachments, setNewlyAddedAttachments] = useState<{ id: string; file: File }[]>([])
   const [loadedExistingAttachmentFiles, setLoadedExistingAttachmentFiles] = useState<{ id: string; file: File }[]>([])
   const [fullscreenImage, setFullscreenImage] = useState<string | null>(null)
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [isEditingDescription, setIsEditingDescription] = useState(false)
+  const [descriptionMode, setDescriptionMode] = useState<'edit' | 'read'>('read')
+  const [showCopyDropdown, setShowCopyDropdown] = useState(false)
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied'>('idle')
+
 
   const { timezone } = useTimezone();
   const { t } = useLanguage();
@@ -56,6 +63,18 @@ export function TaskDetailView({
       setEditedTask(null)
     }
   }, [task])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showCopyDropdown && !(event.target as Element).closest('.copy-dropdown')) {
+        setShowCopyDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showCopyDropdown])
 
   const loadAttachments = async () => {
     if (!task) return
@@ -70,17 +89,95 @@ export function TaskDetailView({
   }
 
   const handleUpdate = async (updates: Partial<Task>) => {
+    if (!editedTask) return
     const updatedTask = { ...editedTask, ...updates }
     setEditedTask(updatedTask)
     onUpdate(editedTask.id, updates)
   }
 
   const handleDelete = async () => {
-    onDelete(task.id)
+    if (!task) return
+
+    const confirmed = window.confirm(t("Are you sure you want to delete this task? This action cannot be undone."))
+    if (confirmed) {
+      onDelete(task.id)
+    }
+  }
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopyStatus('copied')
+      setTimeout(() => setCopyStatus('idle'), 1000)
+    } catch (err) {
+    }
+  }
+
+  const copyAsMarkdown = () => {
+    if (!editedTask?.description) return
+    copyToClipboard(editedTask.description)
+    setShowCopyDropdown(false)
+  }
+
+  const copyAsText = () => {
+    if (!editedTask?.description) return
+    // Simple markdown to text conversion
+    const text = editedTask.description
+      .replace(/#{1,6}\s+/g, '') // Remove headers
+      .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold
+      .replace(/\*(.*?)\*/g, '$1') // Remove italic
+      .replace(/`(.*?)`/g, '$1') // Remove inline code
+      .replace(/^\s*[-*+]\s+/gm, '') // Remove list markers
+      .replace(/^\s*\d+\.\s+/gm, '') // Remove numbered list markers
+      .replace(/\n{3,}/g, '\n\n') // Reduce multiple newlines
+      .trim()
+    copyToClipboard(text)
+    setShowCopyDropdown(false)
+  }
+
+  const copyCodeBlock = async (code: string, blockId: string) => {
+    try {
+      await navigator.clipboard.writeText(code)
+      // Update state to show copied
+      setCodeBlockCopyStatuses(prev => {
+        const newMap = new Map(prev)
+        newMap.set(blockId, 'copied')
+        return newMap
+      })
+
+      // Reset after 2 seconds
+      setTimeout(() => {
+        setCodeBlockCopyStatuses(prev => {
+          const newMap = new Map(prev)
+          newMap.set(blockId, 'idle')
+          return newMap
+        })
+      }, 800)
+    } catch (err) {
+    }
+  }
+
+  const markdownComponents = {
+    code({node, inline, className, children, ...props}) {
+      const match = /language-(\w+)/.exec(className || '');
+      const codeContent = String(children).replace(/\n$/, '');
+
+      return !inline && match ? (
+        <CodeBlock
+          code={codeContent}
+          language={match[1]}
+          className="my-4"
+        />
+      ) : (
+        <code className={className} {...props}>
+          {children}
+        </code>
+      )
+    }
   }
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return
+    if (!e.target.files || !editedTask) return
 
     const newFiles = Array.from(e.target.files)
     const currentAttachmentIds = new Set(editedTask.attachments)
@@ -105,6 +202,7 @@ export function TaskDetailView({
     if (isNew) {
       setNewlyAddedAttachments((prev) => prev.filter((attachment) => attachment.id !== attachmentId))
     } else {
+      if (!editedTask) return
       await deleteAttachment(attachmentId)
       handleUpdate({ attachments: editedTask.attachments.filter((id) => id !== attachmentId) })
       setLoadedExistingAttachmentFiles((prev) => prev.filter((attachment) => attachment.id !== attachmentId))
@@ -190,9 +288,49 @@ export function TaskDetailView({
                 <ChevronDown className="w-4 h-4 text-[#737373] dark:text-white/90" />
               </Button>
             </div>
-            <Button variant="ghost" size="sm" onClick={handleDelete} className="h-8 w-8 p-0 bg-transparent hover:bg-black/10 dark:hover:bg-white/10">
-              <Trash2 className="w-4 h-4  text-[#737373] dark:text-white/90" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 bg-transparent hover:bg-black/10 dark:hover:bg-white/10"
+                onClick={() => document.getElementById("task-attachments-input")?.click()}
+              >
+                <Image className="w-4 h-4 text-[#737373] dark:text-white/90" />
+              </Button>
+              <div className="relative copy-dropdown">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowCopyDropdown(!showCopyDropdown)}
+                  className="h-8 w-8 p-0 bg-transparent hover:bg-black/10 dark:hover:bg-white/10"
+                >
+                  {copyStatus === 'copied' ? (
+                    <Check className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <Copy className="w-4 h-4 text-[#737373] dark:text-white/90" />
+                  )}
+                </Button>
+                {showCopyDropdown && (
+                  <div className="absolute right-0 top-10 z-50 w-48 bg-white dark:bg-black border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
+                    <button
+                      onClick={copyAsMarkdown}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-t-lg text-[#737373] dark:text-white/90"
+                    >
+                      Copy as Markdown
+                    </button>
+                    <button
+                      onClick={copyAsText}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-b-lg text-[#737373] dark:text-white/90"
+                    >
+                      Copy as Text
+                    </button>
+                  </div>
+                )}
+              </div>
+              <Button variant="ghost" size="sm" onClick={handleDelete} className="h-8 w-8 p-0 bg-transparent hover:bg-black/10 dark:hover:bg-white/10">
+                <Trash2 className="w-4 h-4  text-[#737373] dark:text-white/90" />
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -217,15 +355,54 @@ export function TaskDetailView({
             />
 
             {/* Task Description */}
-            <TextareaAutosize
-              readOnly={!isEditingDescription}
-              value={editedTask.description}
-              onChange={(e) => handleUpdate({ description: e.target.value })}
-              onFocus={() => setIsEditingDescription(true)}
-              onBlur={() => setIsEditingDescription(false)}
-              className="w-full resize-none appearance-none bg-transparent p-0 text-base dark:bg-black  text-[#737373]/70 dark:text-[#AEAFB1] placeholder:text-black/30 dark:placeholder:text-white/30 focus:outline-none"
-              placeholder={t("Add a description...")}
-            />
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDescriptionMode(descriptionMode === 'edit' ? 'read' : 'edit')}
+                    className="h-8 w-8 p-0 hover:bg-black/10 dark:hover:bg-white/10"
+                  >
+                    {descriptionMode === 'edit' ? (
+                      <Eye className="w-4 h-4 text-[#737373] dark:text-white/90" />
+                    ) : (
+                      <Edit3 className="w-4 h-4 text-[#737373] dark:text-white/90" />
+                    )}
+                  </Button>
+                  <span className="text-xs text-[#737373]/50 dark:text-[#AEAFB1]/50">
+                    {descriptionMode === 'edit' ? t('Edit Mode') : t('Read Mode')}
+                  </span>
+                </div>
+              </div>
+
+              {descriptionMode === 'edit' ? (
+                <TextareaAutosize
+                  readOnly={!isEditingDescription}
+                  value={editedTask.description}
+                  onChange={(e) => handleUpdate({ description: e.target.value })}
+                  onFocus={() => setIsEditingDescription(true)}
+                  onBlur={() => setIsEditingDescription(false)}
+                  className="w-full resize-none appearance-none bg-transparent p-0 text-base dark:bg-black text-[#737373]/70 dark:text-[#AEAFB1] placeholder:text-black/30 dark:placeholder:text-white/30 focus:outline-none"
+                  placeholder={t("Add a description...")}
+                />
+              ) : (
+                <div className="prose prose-sm max-w-none dark:prose-invert">
+                  {editedTask.description ? (
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={markdownComponents}
+                    >
+                      {editedTask.description}
+                    </ReactMarkdown>
+                  ) : (
+                    <p className="text-[#737373]/50 dark:text-[#AEAFB1]/50 italic">
+                      {t("No description added yet. Switch to edit mode to add one.")}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Attachments */}
             {uniqueAttachmentsForDisplay.length > 0 && (
@@ -256,25 +433,15 @@ export function TaskDetailView({
               </div>
             )}
 
-            {/* Add Attachments */}
-            <div>
-              <input
-                id="task-attachments-input"
-                type="file"
-                multiple
-                accept="image/*, application/pdf, text/plain, application/zip"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-              <Button
-                variant="outline"
-                className="w-full h-12 justify-center border-gray-700   dark:text-[#E8E7EA] bg-black/5 text-black/90 hover:text-black/90 text-sm cursor-pointer dark:bg-white/5 dark:hover:bg-white/10 dark:border-[#262626] border-none"
-                onClick={() => document.getElementById("task-attachments-input")?.click()}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                {t("Add Attachments")}
-              </Button>
-            </div>
+            {/* Hidden file input for attachments */}
+            <input
+              id="task-attachments-input"
+              type="file"
+              multiple
+              accept="image/*, application/pdf, text/plain, application/zip"
+              onChange={handleFileChange}
+              className="hidden"
+            />
           </div>
         </div>
       </div>
@@ -287,7 +454,7 @@ export function TaskDetailView({
             {/* Status */}
             <div>
               <label className="text-xs font-medium text-[#737373] dark:text-[#9E9E9E] block mb-1">{t("Status")}</label>
-              <Select value={editedTask.statusId} onValueChange={(value) => handleUpdate({ statusId: value })}>
+              <Select value={editedTask.statusId} onValueChange={(value) => handleUpdate({ statusId: value }) }>
                 <SelectTrigger className="border-black/5 text-black dark:text-white/90 text-sm bg-black/5 dark:bg-black dark:border-[#262626]">
                   <SelectValue />
                 </SelectTrigger>
@@ -307,7 +474,7 @@ export function TaskDetailView({
             {/* Priority */}
             <div>
               <label className="text-xs font-medium text-[#737373] dark:text-[#9E9E9E] block mb-1">{t("Priority")}</label>
-              <Select value={editedTask.priorityId || ""} onValueChange={(value) => handleUpdate({ priorityId: value || undefined })}>
+              <Select value={editedTask.priorityId || ""} onValueChange={(value) => handleUpdate({ priorityId: value || undefined }) }>
                 <SelectTrigger className="border-black/5 text-black dark:text-white/90 text-sm bg-black/5 dark:bg-black dark:border-[#262626]">
                   <SelectValue placeholder={t("Select priority")} />
                 </SelectTrigger>
@@ -359,7 +526,7 @@ export function TaskDetailView({
                 <Input
                   type="datetime-local"
                   value={editedTask.deadline ? format(toZonedTime(new Date(editedTask.deadline), timezone), "yyyy-MM-dd'T'HH:mm") : ""}
-                  onClick={(e) => e.target.showPicker()} 
+                  onClick={(e) => (e.target as HTMLInputElement).showPicker?.()} 
                   onChange={(e) => {
                     const newDeadline = e.target.value
                       ? toZonedTime(new Date(e.target.value), timezone).toISOString()

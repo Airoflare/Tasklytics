@@ -1,0 +1,8 @@
+version: '3'
+
+tasks:
+  dev: # Clear cache and start dev server
+    cmds:
+      - rm -rf .next
+      - bun i
+      - bun run dev
