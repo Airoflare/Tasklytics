@@ -816,6 +816,7 @@ export default function Home() {
               tasks={filteredTasks}
               statuses={visibleStatuses}
               priorities={priorities}
+              tags={tags}
               viewType={currentView}
               onTaskSelect={handleTaskSelect}
               onTaskUpdate={handleTaskUpdate}

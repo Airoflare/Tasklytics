@@ -1,6 +1,6 @@
 "use client"
 
-import type { Task, Status } from "@/lib/types"
+import type { Task, Status, Priority, Tag } from "@/lib/types"
 import {
   DragDropContext,
   Droppable,
@@ -13,12 +13,11 @@ import { formatDistanceToNow } from "date-fns"
 import { toZonedTime } from 'date-fns-tz/toZonedTime'
 import { useTimezone } from "@/lib/timezone-context"
 
-import type { Task, Status, Priority } from "@/lib/types"
-
 interface KanbanBoardProps {
   tasks: Task[]
   statuses: Status[]
   priorities: Priority[]
+  tags: Tag[]
   onTaskSelect: (task: Task) => void
   onTaskUpdate: (taskId: string, updates: Partial<Task>) => void
 }
@@ -27,6 +26,7 @@ export function KanbanBoard({
   tasks,
   statuses,
   priorities,
+  tags,
   onTaskSelect,
   onTaskUpdate,
 }: KanbanBoardProps) {
@@ -106,29 +106,47 @@ export function KanbanBoard({
                               <h4 className="text-sm font-normal truncate mb-2 ml-2 mt-1 text-[#0A0A0A] dark:text-white">
                                 {task.title}
                               </h4>
-                              <div className="flex items-center  ml-2 gap-2 text-xs text-gray-500 dark:text-[#9E9E9E] mb-2">
-                                {task.deadline && (
-                                  <div className="flex items-center gap-1">
+                               <div className="flex flex-wrap items-center ml-2 gap-2 text-xs text-gray-500 dark:text-[#9E9E9E] mb-2">
+                                 {task.deadline && (
+                                   <div className="flex items-center gap-1 flex-shrink-0">
                                     <Timer className="w-3.5 h-3.5" />
                                     <span>{formatDateDeadline(task.deadline)}</span>
                                   </div>
                                 )}
-                                {task.priorityId && (
-                                  <Badge
-                                    className="flex items-center gap-2 px-1 py-0 rounded-sm text-xs"
-                                    style={{
-                                      color: priorities.find(p => p.id === task.priorityId)?.color || '#6b7280',
-                                    }}
-                                  >
-                                    <span
-                                      className="w-2 h-2 rounded-full"
-                                      style={{ backgroundColor: priorities.find(p => p.id === task.priorityId)?.color || '#6b7280' }}
-                                    />
-                                    {priorities.find(p => p.id === task.priorityId)?.name}
-                                  </Badge>
-                                )}
-                                {task.attachments.length > 0 && (
-                                  <div className="flex items-center gap-2">
+                                 {task.priorityId && (
+                                   <Badge
+                                     className="flex items-center gap-2 px-1 py-0 rounded-sm text-xs flex-shrink-0"
+                                     style={{
+                                       color: priorities.find(p => p.id === task.priorityId)?.color || '#6b7280',
+                                     }}
+                                   >
+                                     <span
+                                       className="w-2 h-2 rounded-full"
+                                       style={{ backgroundColor: priorities.find(p => p.id === task.priorityId)?.color || '#6b7280' }}
+                                     />
+                                     {priorities.find(p => p.id === task.priorityId)?.name}
+                                   </Badge>
+                                 )}
+                                 {task.tags.map(tagId => {
+                                   const tag = tags.find(t => t.id === tagId)
+                                   return tag ? (
+                                     <Badge
+                                       key={tagId}
+                                       className="flex items-center gap-2 px-1 py-0 rounded-sm text-xs flex-shrink-0"
+                                       style={{
+                                         color: tag.color,
+                                       }}
+                                     >
+                                       <span
+                                         className="w-2 h-2 rounded-full"
+                                         style={{ backgroundColor: tag.color }}
+                                       />
+                                       {tag.name}
+                                     </Badge>
+                                   ) : null
+                                 })}
+                                 {task.attachments.length > 0 && (
+                                   <div className="flex items-center gap-2 flex-shrink-0">
                                     <Paperclip className="w-3 h-3" />
                                     <span>{task.attachments.length}</span>
                                   </div>

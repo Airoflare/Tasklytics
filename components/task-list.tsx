@@ -1,6 +1,6 @@
 "use client"
 
-import type { Task, Status, ViewType, Priority } from "@/lib/types"
+import type { Task, Status, ViewType, Priority, Tag } from "@/lib/types"
 import { TaskCard } from "./task-card"
 import { KanbanBoard } from "./kanban-board"
 
@@ -8,6 +8,7 @@ interface TaskListProps {
   tasks: Task[]
   statuses: Status[]
   priorities: Priority[]
+  tags: Tag[]
   viewType: ViewType
   onTaskSelect: (task: Task) => void
   onTaskUpdate: (taskId: string, updates: Partial<Task>) => void
@@ -23,6 +24,7 @@ export function TaskList({
   tasks,
   statuses,
   priorities,
+  tags,
   viewType,
   onTaskSelect,
   onTaskUpdate,
@@ -42,7 +44,7 @@ export function TaskList({
     return (
       <div className="h-full overflow-x-auto">
         <div className="inline-block min-w-full align-top">
-          <KanbanBoard tasks={displayTasks} statuses={statuses} priorities={priorities} onTaskSelect={onTaskSelect} onTaskUpdate={onTaskUpdate} />
+          <KanbanBoard tasks={displayTasks} statuses={statuses} priorities={priorities} tags={tags} onTaskSelect={onTaskSelect} onTaskUpdate={onTaskUpdate} />
         </div>
       </div>
     );
@@ -118,6 +120,7 @@ export function TaskList({
                       task={task}
                       status={status}
                       priorities={priorities}
+                      tags={tags}
                       onClick={() => onTaskSelect(task)}
                       viewType={viewType}
                     />

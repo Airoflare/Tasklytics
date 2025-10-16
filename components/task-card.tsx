@@ -1,7 +1,7 @@
 "use client"
 
 import React, { memo, useState, useEffect, useRef } from "react"
-import type { Task, Status, ViewType, Priority } from "@/lib/types"
+import type { Task, Status, ViewType, Priority, Tag } from "@/lib/types"
 import { formatDistanceToNow } from "date-fns"
 import { format } from 'date-fns-tz/format'
 import { toZonedTime } from 'date-fns-tz/toZonedTime'
@@ -17,6 +17,7 @@ interface TaskCardProps {
   task: Task
   status?: Status
   priorities: Priority[]
+  tags: Tag[]
   onClick: () => void
   viewType: ViewType
 }
@@ -25,6 +26,7 @@ export const TaskCard = memo(({
   task,
   status,
   priorities,
+  tags,
   onClick,
   viewType,
 }: TaskCardProps) => {
@@ -260,7 +262,7 @@ export const TaskCard = memo(({
           </div>
         </div>
         <div className="mt-auto pt-4 border-t border-gray-700 w-full flex items-center justify-between">
-          <div className="flex items-center gap-4 text-sm text-[#737373] dark:text-[#9E9E9E]">
+          <div className="flex items-center gap-2 text-sm text-[#737373] dark:text-[#9E9E9E]">
             {task.priorityId && (
               <Badge
                 className="flex items-center gap-2 px-1 py-0 rounded-sm text-xs w-fit"
@@ -275,6 +277,24 @@ export const TaskCard = memo(({
                 {priorities.find(p => p.id === task.priorityId)?.name}
               </Badge>
             )}
+            {task.tags.map(tagId => {
+              const tag = tags.find(t => t.id === tagId)
+              return tag ? (
+                <Badge
+                  key={tagId}
+                  className="flex items-center gap-2 px-1 py-0 rounded-sm text-xs w-fit"
+                  style={{
+                    color: tag.color,
+                  }}
+                >
+                  <span
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: tag.color }}
+                  />
+                  {tag.name}
+                </Badge>
+              ) : null
+            })}
             {task.deadline && (
               <div className="flex items-center gap-1">
                 <Timer className="w-4 h-4" />
@@ -307,22 +327,40 @@ export const TaskCard = memo(({
           <span>{formatDate(task.deadline)}</span>
         </div>
       )}
-      <div className="flex items-center gap-1 text-xs text-[#737373] dark:text-[#9E9E9E] whitespace-nowrap">
-          {task.priorityId && (
-            <Badge
-              className="flex items-center gap-2 px-1 py-0 rounded-sm text-xs w-fit"
-              style={{
-                color: priorities.find(p => p.id === task.priorityId)?.color || '#6b7280',
-              }}
-            >
-              <span
-                className="w-2 h-2 rounded-full"
-                style={{ backgroundColor: priorities.find(p => p.id === task.priorityId)?.color || '#6b7280' }}
-              />
-              {priorities.find(p => p.id === task.priorityId)?.name}
-            </Badge>
-          )}
-        </div>
+       <div className="flex items-center gap-1 text-xs text-[#737373] dark:text-[#9E9E9E] whitespace-nowrap">
+           {task.priorityId && (
+             <Badge
+               className="flex items-center gap-2 px-1 py-0 rounded-sm text-xs w-fit"
+               style={{
+                 color: priorities.find(p => p.id === task.priorityId)?.color || '#6b7280',
+               }}
+             >
+               <span
+                 className="w-2 h-2 rounded-full"
+                 style={{ backgroundColor: priorities.find(p => p.id === task.priorityId)?.color || '#6b7280' }}
+               />
+               {priorities.find(p => p.id === task.priorityId)?.name}
+             </Badge>
+           )}
+           {task.tags.map(tagId => {
+             const tag = tags.find(t => t.id === tagId)
+             return tag ? (
+               <Badge
+                 key={tagId}
+                 className="flex items-center gap-2 px-1 py-0 rounded-sm text-xs w-fit"
+                 style={{
+                   color: tag.color,
+                 }}
+               >
+                 <span
+                   className="w-2 h-2 rounded-full"
+                   style={{ backgroundColor: tag.color }}
+                 />
+                 {tag.name}
+               </Badge>
+             ) : null
+           })}
+         </div>
       <div className="flex items-center gap-3 text-xs text-[#737373] dark:text-[#9E9E9E]">
         {/* Attachment count */}
         {task.attachments.length > 0 && (
