@@ -335,7 +335,7 @@ export function TaskDetailView({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 mt-6">
+        <div className="flex-1 overflow-y-auto p-6 mt-6" style={{ WebkitOverflowScrolling: 'touch', overflowScrolling: 'touch' }}>
           <div className="max-w-4xl mx-auto space-y-6">
             {/* Task Title */}
             <TextareaAutosize

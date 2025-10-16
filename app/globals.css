@@ -95,6 +95,40 @@
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
+/* WebKit scrolling fixes for packaged apps */
+.overflow-y-auto {
+  -webkit-overflow-scrolling: touch;
+  overflow-scrolling: touch;
+}
+
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+  overflow-scrolling: touch;
+}
+
+/* Additional WebKit fixes */
+* {
+  -webkit-touch-callout: none;
+  -webkit-user-select: text;
+}
+
+/* Ensure proper height calculations in WebKit */
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Fix flex shrinking for scroll containers */
+.overflow-y-auto {
+  min-height: 0;
+  flex-shrink: 1;
+}
+
+.overflow-x-auto {
+  min-height: 0;
+  flex-shrink: 1;
+}
+
 /* Responsive grid for cards view */
 .cards-grid {
   display: grid;

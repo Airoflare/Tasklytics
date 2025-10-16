@@ -599,7 +599,7 @@ export default function Home() {
           priorities={priorities}
         />
       ) : (
-        <main key={language} className="flex-1 flex flex-col min-w-0">
+        <main key={language} className="flex-1 flex flex-col min-w-0 h-full">
           <div className="border-b bg-background/95 dark:bg-black border-black/5 dark:border-white/5 backdrop-blur supports-[backdrop-filter]:bg-background/60 ">
             <div className="px-6 py-2 flex h-20 items-center justify-between">
               <h1 className="text-md font-normal  text-[#737373] dark:text-[#E8E7EA]">{getHeaderTitle()}</h1>
@@ -811,7 +811,7 @@ export default function Home() {
               </div>
             </div>
           </div>
-          <div className="flex-1 overflow-hidden">
+           <div className="flex-1 h-full">
             <TaskList
               tasks={filteredTasks}
               statuses={visibleStatuses}

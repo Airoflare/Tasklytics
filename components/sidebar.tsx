@@ -45,7 +45,7 @@ export function Sidebar({
 
   return (
     <div className="w-72 dark:bg-black border-r border-gray-200 dark:border-gray-900 dark:border-white/10 flex flex-col">
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch', overflowScrolling: 'touch' }}>
         <div className="p-4">
           <div className="mb-6">
             <div className="space-y-1">

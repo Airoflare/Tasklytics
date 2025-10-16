@@ -76,6 +76,8 @@ export function SettingsContent({
   const [newPriorityName, setNewPriorityName] = useState("")
   const [newPriorityColor, setNewPriorityColor] = useState("#1e90ff")
   const [editingPriority, setEditingPriority] = useState<Priority | null>(null)
+  const [showManualExport, setShowManualExport] = useState(false)
+  const [exportData, setExportData] = useState<string>('')
 
   const handleStatusSubmit = () => {
     if (editingStatus) {
@@ -145,17 +147,59 @@ export function SettingsContent({
   ];
 
   const handleExportData = async () => {
-    const data = await db.exportData();
-    const jsonString = JSON.stringify(data, null, 2);
-    const blob = new Blob([jsonString], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "Tasklytics_backup.json";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    try {
+      const data = await db.exportData();
+      const jsonString = JSON.stringify(data, null, 2);
+
+      // For WebKit packaged apps, downloads are often blocked
+      // Let's try a different approach - create a temporary link and simulate click
+      const blob = new Blob([jsonString], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+
+      // Create a temporary anchor element
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "Tasklytics_backup.json";
+      a.style.display = "none";
+
+      // Add to body, click, and remove
+      document.body.appendChild(a);
+
+      // Try multiple click methods for WebKit compatibility
+      try {
+        // Method 1: Direct click
+        a.click();
+      } catch (e) {
+        try {
+          // Method 2: Dispatch click event
+          const clickEvent = new MouseEvent("click", {
+            view: window,
+            bubbles: true,
+            cancelable: true
+          });
+          a.dispatchEvent(clickEvent);
+        } catch (e2) {
+          try {
+            // Method 3: Use window.open as fallback
+            window.open(url, '_blank');
+          } catch (e3) {
+            // Method 4: Copy to clipboard
+            navigator.clipboard.writeText(jsonString).then(() => {
+              alert(t("Download blocked. Data copied to clipboard instead. Please paste and save manually."));
+            }).catch(() => {
+              alert(t("Export failed. Please use Manual Export instead."));
+            });
+          }
+        }
+      }
+
+      // Cleanup
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+    } catch (error) {
+      alert(t("Failed to export data. Please use Manual Export instead."));
+    }
   };
 
   const handleImportData = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -178,10 +222,23 @@ export function SettingsContent({
   };
 
   const handleDeleteAllData = async () => {
-    if (window.confirm(t("Are you sure you want to delete all data? This action cannot be undone."))) {
-      await db.clearAllStores();
-      alert(t("All data deleted successfully! Please refresh the page."));
-      window.location.reload();
+    try {
+      // For WebKit packaged apps, window.confirm might not work properly
+      // Use a simple prompt or direct action with warning
+      const userInput = prompt(t("Type 'DELETE' to confirm deletion of all data. This action cannot be undone:"));
+      if (userInput === 'DELETE') {
+        await db.clearAllStores();
+        alert(t("All data deleted successfully! Please refresh the page."));
+        // Use setTimeout to ensure alert is shown before reload
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      } else if (userInput !== null) {
+        alert(t("Deletion cancelled. Please type 'DELETE' exactly to confirm."));
+      }
+    } catch (error) {
+      console.error("Delete failed:", error);
+      alert(t("Failed to delete data. Please try again."));
     }
   };
 
@@ -195,7 +252,7 @@ export function SettingsContent({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch', overflowScrolling: 'touch' }}>
         <div className="px-6 py-4">
           <Tabs defaultValue="general" className="w-full">
             <TabsList className="flex flex-wrap bg-transparent border-b border-gray-100 dark:border-white/10 rounded-none h-auto p-0 mb-6 gap-4 justify-start">
@@ -640,14 +697,33 @@ export function SettingsContent({
                   <div className="p-4 rounded-lg border text-[#737373] dark:text-[#E8E7EA] border-black/10 bg-black/5 dark:bg-[#090909] dark:border-[#262626]">
                     <h3 className=" text-[#737373] dark:text-[#E8E7EA] text-sm font-medium mb-1">{t("Backup")}</h3>
                     <p className="text-[#737373] dark:text-[#9E9E9E] text-xs mb-3">{t("Download all your tasks, statuses, and tags as JSON.")}</p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className=" dark:text-[#E8E7EA] bg-black/5 text-black/90 hover:text-black/90 text-sm cursor-pointer dark:bg-black dark:border-[#262626] border-none"
-                      onClick={handleExportData}
-                    >
-                      {t("Export Data")}
-                    </Button>
+                     <div className="flex gap-2">
+                       <Button
+                         variant="outline"
+                         size="sm"
+                         className=" dark:text-[#E8E7EA] bg-black/5 text-black/90 hover:text-black/90 text-sm cursor-pointer dark:bg-black dark:border-[#262626] border-none"
+                         onClick={handleExportData}
+                       >
+                         {t("Export Data")}
+                       </Button>
+                       <Button
+                         variant="outline"
+                         size="sm"
+                         className=" dark:text-[#E8E7EA] bg-black/5 text-black/90 hover:text-black/90 text-sm cursor-pointer dark:bg-black dark:border-[#262626] border-none"
+                         onClick={async () => {
+                           try {
+                             const data = await db.exportData();
+                             setExportData(JSON.stringify(data, null, 2));
+                             setShowManualExport(true);
+                           } catch (error) {
+                             console.error("Failed to load export data:", error);
+                             alert(t("Failed to load data for manual export."));
+                           }
+                         }}
+                       >
+                         {t("Manual Export")}
+                       </Button>
+                     </div>
                   </div>
             
                   <div className="p-4 rounded-lg border text-[#737373] dark:text-[#E8E7EA] border-black/10 bg-black/5 dark:bg-[#090909] dark:border-[#262626]">
@@ -691,6 +767,57 @@ export function SettingsContent({
           </Tabs>
         </div>
       </div>
+
+      {/* Manual Export Dialog */}
+      {showManualExport && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-[#090909] border border-black/10 dark:border-[#262626] rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-[#737373] dark:text-[#E8E7EA]">{t("Manual Export")}</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowManualExport(false)}
+                className="text-[#737373] dark:text-[#9E9E9E] hover:text-black dark:hover:text-white"
+              >
+                ✕
+              </Button>
+            </div>
+            <div className="flex-1 overflow-auto mb-4" style={{ WebkitOverflowScrolling: 'touch', overflowScrolling: 'touch' }}>
+              <textarea
+                value={exportData}
+                readOnly
+                className="w-full h-96 p-3 border border-black/10 dark:border-[#262626] rounded-md bg-black/5 dark:bg-black text-sm font-mono text-[#737373] dark:text-[#E8E7EA]"
+                placeholder={t("Loading data...")}
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  navigator.clipboard.writeText(exportData).then(() => {
+                    alert(t("Data copied to clipboard!"));
+                  }).catch(() => {
+                    alert(t("Failed to copy to clipboard."));
+                  });
+                }}
+                className="dark:text-[#E8E7EA] bg-black/5 text-black/90 hover:text-black/90 text-sm cursor-pointer dark:bg-black dark:border-[#262626] border-none"
+              >
+                {t("Copy to Clipboard")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowManualExport(false)}
+                className="dark:text-[#E8E7EA] bg-black/5 text-black/90 hover:text-black/90 text-sm cursor-pointer dark:bg-black dark:border-[#262626] border-none"
+              >
+                {t("Close")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

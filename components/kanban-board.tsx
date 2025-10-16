@@ -80,6 +80,7 @@ export function KanbanBoard({
                       ref={provided.innerRef}
                       {...provided.droppableProps}
                       className="space-y-3 overflow-y-auto flex-1 pr-1"
+                      style={{ WebkitOverflowScrolling: 'touch', overflowScrolling: 'touch' }}
                     >
                       {statusTasks.map((task, index) => (
                         <Draggable
