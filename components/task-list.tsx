@@ -3,6 +3,7 @@
 import type { Task, Status, ViewType, Priority, Tag } from "@/lib/types"
 import { TaskCard } from "./task-card"
 import { KanbanBoard } from "./kanban-board"
+import { TableView } from "./table-view"
 
 interface TaskListProps {
   tasks: Task[]
@@ -46,6 +47,14 @@ export function TaskList({
         <div className="inline-block min-w-full align-top">
           <KanbanBoard tasks={displayTasks} statuses={statuses} priorities={priorities} tags={tags} onTaskSelect={onTaskSelect} onTaskUpdate={onTaskUpdate} />
         </div>
+      </div>
+    );
+  }
+
+  if (viewType === "table") {
+    return (
+      <div className="h-full overflow-auto p-6">
+        <TableView tasks={displayTasks} statuses={statuses} priorities={priorities} tags={tags} onTaskSelect={onTaskSelect} />
       </div>
     );
   }

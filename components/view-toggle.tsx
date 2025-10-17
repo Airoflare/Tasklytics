@@ -2,14 +2,15 @@
 
 import type { ViewType } from "@/lib/types"
 import { Button } from "@/components/ui/button"
-import { List, Kanban } from "lucide-react"
+import { List, Kanban, Table } from "lucide-react"
 
 interface ViewToggleProps {
   currentView: ViewType
   onViewChange: (view: ViewType) => void
+  selectedStatus?: string | null
 }
 
-export function ViewToggle({ currentView, onViewChange }: ViewToggleProps) {
+export function ViewToggle({ currentView, onViewChange, selectedStatus }: ViewToggleProps) {
   return (
     <div className="flex items-center gap-1 dark:border-[#262626] rounded-lg p-1 ac">
       <Button
@@ -20,13 +21,23 @@ export function ViewToggle({ currentView, onViewChange }: ViewToggleProps) {
       >
         <List className="w-4 h-4" />
       </Button>
+      {selectedStatus === null && (
+        <Button
+          size="sm"
+          variant={currentView === "kanban" ? "secondary" : "ghost"}
+          onClick={() => onViewChange("kanban")}
+          className={`h-8 px-3 ${currentView === "kanban" ? 'dark:bg-white/10  dark:text-white text-[#737373] bg-black/10 hover:text-[#737373]' : 'bg-transparent text-[#737373] hover:text-[#737373]'}`}
+        >
+          <Kanban className="w-4 h-4" />
+        </Button>
+      )}
       <Button
         size="sm"
-        variant={currentView === "kanban" ? "secondary" : "ghost"}
-        onClick={() => onViewChange("kanban")}
-        className={`h-8 px-3 ${currentView === "kanban" ? 'dark:bg-white/10  dark:text-white text-[#737373] bg-black/10 hover:text-[#737373]' : 'bg-transparent text-[#737373] hover:text-[#737373]'}`}
+        variant={currentView === "table" ? "secondary" : "ghost"}
+        onClick={() => onViewChange("table")}
+        className={`h-8 px-3 ${currentView === "table" ? 'dark:bg-white/10  dark:text-white text-[#737373] bg-black/10 hover:text-[#737373]' : 'bg-transparent text-[#737373] hover:text-[#737373]'}`}
       >
-        <Kanban className="w-4 h-4" />
+        <Table className="w-4 h-4" />
       </Button>
     </div>
   )

@@ -604,8 +604,8 @@ export default function Home() {
             <div className="px-6 py-2 flex h-20 items-center justify-between">
               <h1 className="text-md font-normal  text-[#737373] dark:text-[#E8E7EA]">{getHeaderTitle()}</h1>
 
-              <div className="flex items-center space-x-2 ">
-                {selectedStatus === null && <ViewToggle currentView={currentView} onViewChange={setCurrentView} />}
+               <div className="flex items-center space-x-2 ">
+                 <ViewToggle currentView={currentView} onViewChange={setCurrentView} selectedStatus={selectedStatus} />
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

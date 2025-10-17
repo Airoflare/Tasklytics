@@ -34,4 +34,4 @@ export type Priority = {
   createdAt: string
 }
 
-export type ViewType = "list" | "kanban" | "cards"
+export type ViewType = "list" | "kanban" | "table"
