@@ -172,7 +172,7 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, statuses, tags, pri
 
             <div>
               <label className="text-sm font-medium text-[#737373] dark:text-[#9E9E9E] block mb-2">{t("Tags")}</label>
-              <Select onValueChange={(value) => setSelectedTags(value ? [value] : [])}>
+              <Select onValueChange={(value) => setSelectedTags(value && value !== "none" ? [value] : [])}>
                 <SelectTrigger className="border-black/5 text-black dark:text-white/90 text-sm bg-black/5 dark:bg-black dark:border-[#262626]">
                   <SelectValue placeholder={t("Select tags...")} />
                 </SelectTrigger>
@@ -182,14 +182,19 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, statuses, tags, pri
                       {t("Create a new tag from settings page first")}
                     </div>
                   ) : (
-                    tags.map((tag) => (
-                      <SelectItem key={tag.id} value={tag.id} className="text-black dark:text-white bg-white dark:bg-black hover:bg-[#f0f0f0] dark:hover:bg-[#000]">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: tag.color }} />
-                          {tag.name}
-                        </div>
+                    <>
+                      {tags.map((tag) => (
+                        <SelectItem key={tag.id} value={tag.id} className="text-black dark:text-white bg-white dark:bg-black hover:bg-[#f0f0f0] dark:hover:bg-[#000]">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: tag.color }} />
+                            {tag.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="none" className="text-black dark:text-white bg-white dark:bg-black hover:bg-[#f0f0f0] dark:hover:bg-[#000]">
+                        {t("Clear tags")}
                       </SelectItem>
-                    ))
+                    </>
                   )}
                 </SelectContent>
               </Select>

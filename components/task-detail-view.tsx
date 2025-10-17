@@ -538,13 +538,13 @@ export function TaskDetailView({
             {/* Tags */}
             <div>
               <label className="text-xs font-medium text-[#737373] dark:text-[#9E9E9E] block mb-1">{t("Tags")}</label>
-              <Select
-                value={editedTask.tags[0] || ""}
-                onValueChange={(value) => {
-                  const newTags = value ? [value] : []
-                  handleUpdate({ tags: newTags })
-                }}
-              >
+               <Select
+                 value={editedTask.tags[0] || ""}
+                 onValueChange={(value) => {
+                   const newTags = value && value !== "none" ? [value] : []
+                   handleUpdate({ tags: newTags })
+                 }}
+               >
                 <SelectTrigger className="border-black/5 text-black dark:text-white/90 text-sm bg-black/5 dark:bg-black dark:border-[#262626]">
                   <SelectValue placeholder={t("Select a tag")} />
                 </SelectTrigger>
@@ -557,6 +557,9 @@ export function TaskDetailView({
                       </div>
                     </SelectItem>
                   ))}
+                  <SelectItem value="none" className="text-black dark:text-white bg-white dark:bg-black hover:bg-[#f0f0f0] dark:hover:bg-[#000]">
+                    {t("Clear tags")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
               
