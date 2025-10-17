@@ -103,9 +103,9 @@ export function KanbanBoard({
                               `}
                               onClick={() => onTaskSelect(task)}
                             >
-                              <h4 className="text-sm font-normal truncate mb-2 ml-2 mt-1 text-[#0A0A0A] dark:text-white">
-                                {task.title}
-                              </h4>
+                               <h4 className="text-sm font-normal line-clamp-2 mb-2 ml-2 mt-1 text-[#0A0A0A] dark:text-white">
+                                 {task.title}
+                               </h4>
                                <div className="flex flex-wrap items-center ml-2 gap-2 text-xs text-gray-500 dark:text-[#9E9E9E] mb-2">
                                  {task.deadline && (
                                    <div className="flex items-center gap-1 flex-shrink-0">
