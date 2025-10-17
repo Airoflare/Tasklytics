@@ -36,15 +36,15 @@ export function TableView({
 
   return (
     <div className="h-full overflow-auto">
-      <Table>
+      <Table className="border-black/5 dark:border-white/5">
         <TableHeader>
-          <TableRow>
-            <TableHead className="w-[300px]">Title</TableHead>
-            <TableHead className="w-[120px]">Status</TableHead>
-            <TableHead className="w-[120px]">Priority</TableHead>
-            <TableHead className="w-[200px]">Tags</TableHead>
-            <TableHead className="w-[120px]">Deadline</TableHead>
-            <TableHead className="w-[120px]">Created</TableHead>
+          <TableRow className="border-black/5 dark:border-white/5 hover:bg-transparent">
+            <TableHead className="w-[300px] text-[#737373] dark:text-[#E8E7EA] font-medium">Title</TableHead>
+            <TableHead className="w-[120px] text-[#737373] dark:text-[#E8E7EA] font-medium">Status</TableHead>
+            <TableHead className="w-[120px] text-[#737373] dark:text-[#E8E7EA] font-medium">Priority</TableHead>
+            <TableHead className="w-[200px] text-[#737373] dark:text-[#E8E7EA] font-medium">Tags</TableHead>
+            <TableHead className="w-[120px] text-[#737373] dark:text-[#E8E7EA] font-medium">Deadline</TableHead>
+            <TableHead className="w-[120px] text-[#737373] dark:text-[#E8E7EA] font-medium">Created</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -56,18 +56,18 @@ export function TableView({
             return (
               <TableRow
                 key={task.id}
-                className="cursor-pointer hover:bg-muted/50"
+                className="cursor-pointer border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5"
                 onClick={() => onTaskSelect(task)}
               >
-                <TableCell className="font-medium">
+                <TableCell className="text-sm font-normal text-[#737373] dark:text-[#E8E7EA]">
                   <div className="flex items-center gap-2">
                     <span className="line-clamp-2">{task.title}</span>
                     {task.attachments.length > 0 && (
-                      <Paperclip className="w-3 h-3 text-muted-foreground" />
+                      <Paperclip className="w-3 h-3 text-[#737373] dark:text-[#9E9E9E]" />
                     )}
                   </div>
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-[#737373] dark:text-[#E8E7EA]">
                   {status && (
                     <div className="flex items-center gap-2">
                       <div
@@ -78,7 +78,7 @@ export function TableView({
                     </div>
                   )}
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-[#737373] dark:text-[#E8E7EA]">
                   {priority && (
                     <Badge
                       className="flex items-center gap-2 px-2 py-1 text-xs w-fit"
@@ -92,7 +92,7 @@ export function TableView({
                     </Badge>
                   )}
                 </TableCell>
-                <TableCell>
+                <TableCell className="text-[#737373] dark:text-[#E8E7EA]">
                   <div className="flex flex-wrap gap-1">
                     {taskTags.map(tag => (
                       <Badge
@@ -109,10 +109,10 @@ export function TableView({
                     ))}
                   </div>
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
+                <TableCell className="text-sm text-[#737373] dark:text-[#9E9E9E]">
                   {task.deadline ? formatDate(task.deadline) : "-"}
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
+                <TableCell className="text-sm text-[#737373] dark:text-[#9E9E9E]">
                   {formatDate(task.createdAt)}
                 </TableCell>
               </TableRow>
@@ -121,7 +121,7 @@ export function TableView({
         </TableBody>
       </Table>
       {tasks.length === 0 && (
-        <div className="text-center py-12 text-muted-foreground">
+        <div className="text-center py-12 text-[#737373] dark:text-[#9E9E9E]">
           No tasks found.
         </div>
       )}
