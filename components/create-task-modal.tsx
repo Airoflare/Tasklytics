@@ -3,18 +3,16 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import type { Task, Status } from "@/lib/types"
+import type { Task, Status, Tag, Priority } from "@/lib/types"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { X, ChevronDown } from "lucide-react"
+import { X, ChevronDown, Download } from "lucide-react"
 import { saveAttachment } from "@/lib/attachment-db"
-
 import { useLanguage } from "@/lib/language-context"
-
-import type { Task, Status, Tag, Priority } from "@/lib/types"
+import { isImageFile } from "@/lib/utils"
 
 interface CreateTaskModalProps {
   isOpen: boolean
@@ -215,24 +213,38 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, statuses, tags, pri
             >
               {t("Choose Files")}
             </Button>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {attachments.map((file, index) => (
-                <div key={index} className="relative w-16 h-16">
-                  <img
-                    src={URL.createObjectURL(file) || "/placeholder.svg"}
-                    alt={file.name}
-                    className="w-full h-full object-cover rounded-md"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setAttachments((prev) => prev.filter((_, i) => i !== index))}
-                    className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 text-xs"
-                  >
-                    <X className="w-3 h-3 " />
-                  </button>
-                </div>
-              ))}
-            </div>
+             <div className="mt-2 flex flex-wrap gap-2">
+               {attachments.map((file, index) => {
+                 const isImage = isImageFile(file)
+                 return (
+                   <div key={index} className="relative w-16 h-16">
+                     {isImage ? (
+                       <img
+                         src={URL.createObjectURL(file) || "/placeholder.svg"}
+                         alt={file.name}
+                         className="w-full h-full object-cover rounded-md"
+                       />
+                     ) : (
+                       <div className="w-full h-full bg-gray-100 dark:bg-white/10 rounded-md flex items-center justify-center">
+                         <div className="text-center">
+                           <div className="text-lg mb-1">📄</div>
+                           <div className="text-xs text-gray-600 dark:text-gray-400 truncate px-1" title={file.name}>
+                             {file.name.length > 8 ? file.name.substring(0, 8) + '...' : file.name}
+                           </div>
+                         </div>
+                       </div>
+                     )}
+                     <button
+                       type="button"
+                       onClick={() => setAttachments((prev) => prev.filter((_, i) => i !== index))}
+                       className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 text-xs"
+                     >
+                       <X className="w-2 h-2 " />
+                     </button>
+                   </div>
+                 )
+               })}
+             </div>
           </div>
 
           <div className="flex justify-end gap-2">

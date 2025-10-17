@@ -5,7 +5,7 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { X, ChevronsLeft, ChevronUp, ChevronDown, Trash2, Edit3, Eye, Copy, Check, Image } from "lucide-react"
+import { X, ChevronsLeft, ChevronUp, ChevronDown, Trash2, Edit3, Eye, Copy, Check, Image, Download } from "lucide-react"
 import type { Task, Status, Tag, Priority } from "@/lib/types"
 import { saveAttachment, getAttachment, deleteAttachment } from "@/lib/attachment-db"
 import { formatDistanceToNow } from "date-fns"
@@ -17,6 +17,7 @@ import TextareaAutosize from "react-textarea-autosize"
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { CodeBlock } from './code-block'
+import { isImageFile } from "@/lib/utils"
 
 interface TaskDetailViewProps {
   task: Task | null | undefined
@@ -236,12 +237,14 @@ export function TaskDetailView({
       name: attachment.file.name,
       url: URL.createObjectURL(attachment.file),
       id: attachment.id,
+      file: attachment.file,
     })),
     ...loadedExistingAttachmentFiles.map((attachment) => ({
       type: "existing",
       name: attachment.file.name,
       url: URL.createObjectURL(attachment.file),
       id: attachment.id,
+      file: attachment.file,
     })),
   ]
 
@@ -404,34 +407,75 @@ export function TaskDetailView({
               )}
             </div>
 
-            {/* Attachments */}
-            {uniqueAttachmentsForDisplay.length > 0 && (
-              <div>
-                <h3 className="text-md font-normal mb-4 mt-16 text-[#737373]/50 dark:text-[#AEAFB1]/50">{t("Attachments")}</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {uniqueAttachmentsForDisplay.map((attachment, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={attachment.url || "/placeholder.svg"}
-                        alt={attachment.name}
-                        className="w-full aspect-square object-cover rounded-lg cursor-pointer"
-                        onClick={() => setFullscreenImage(attachment.url)}
-                      />
-                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-9 w-9 p-0 bg-black/50 hover:bg-black/70"
-                          onClick={() => handleRemoveAttachment(attachment.id, attachment.type === "new")}
-                        >
-                          <Trash2 className="w-9 h-9" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+             {/* Attachments */}
+             {uniqueAttachmentsForDisplay.length > 0 && (
+               <div>
+                 <h3 className="text-md font-normal mb-4 mt-16 text-[#737373]/50 dark:text-[#AEAFB1]/50">{t("Attachments")}</h3>
+                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                   {uniqueAttachmentsForDisplay.map((attachment, index) => {
+                     const isImage = isImageFile(attachment.file)
+                     return (
+                       <div key={index} className="relative group">
+                         {isImage ? (
+                           <>
+                             <img
+                               src={attachment.url || "/placeholder.svg"}
+                               alt={attachment.name}
+                               className="w-full aspect-square object-cover rounded-lg cursor-pointer"
+                               onClick={() => setFullscreenImage(attachment.url)}
+                             />
+                             <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                               <Button
+                                 size="sm"
+                                 variant="ghost"
+                                 className="h-9 w-9 p-0 bg-black/50 hover:bg-black/70"
+                                 onClick={() => handleRemoveAttachment(attachment.id, attachment.type === "new")}
+                               >
+                                 <Trash2 className="w-4 h-4" />
+                               </Button>
+                             </div>
+                           </>
+                         ) : (
+                           <>
+                             <div className="w-full aspect-square bg-gray-100 dark:bg-white/5 rounded-lg flex items-center justify-center cursor-pointer">
+                               <div className="text-center">
+                                 <div className="text-2xl mb-1">🗳️</div>
+                                 <div className="text-xs text-gray-600 dark:text-gray-400 truncate px-2" title={attachment.name}>
+                                   {attachment.name}
+                                 </div>
+                               </div>
+                             </div>
+                              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 w-7 p-0 bg-black/50 hover:bg-black/70"
+                                  onClick={() => {
+                                    const link = document.createElement('a')
+                                    link.href = attachment.url
+                                    link.download = attachment.name
+                                    link.click()
+                                  }}
+                                >
+                                  <Download className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 w-7 p-0 bg-black/50 hover:bg-black/70"
+                                  onClick={() => handleRemoveAttachment(attachment.id, attachment.type === "new")}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </div>
+                           </>
+                         )}
+                       </div>
+                     )
+                   })}
+                 </div>
+               </div>
+             )}
 
             {/* Hidden file input for attachments */}
             <input
