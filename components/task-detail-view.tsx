@@ -5,7 +5,7 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { X, ChevronsLeft, ChevronUp, ChevronDown, Trash2, Edit3, Eye, Copy, Check, Image, Download } from "lucide-react"
+import { X, ChevronsLeft, ChevronUp, ChevronDown, Trash2, Edit3, Eye, Copy, Check, FilePlus2, Download } from "lucide-react"
 import type { Task, Status, Tag, Priority } from "@/lib/types"
 import { saveAttachment, getAttachment, deleteAttachment } from "@/lib/attachment-db"
 import { formatDistanceToNow } from "date-fns"
@@ -298,7 +298,7 @@ export function TaskDetailView({
                 className="h-8 w-8 p-0 bg-transparent hover:bg-black/10 dark:hover:bg-white/10"
                 onClick={() => document.getElementById("task-attachments-input")?.click()}
               >
-                <Image className="w-4 h-4 text-[#737373] dark:text-white/90" />
+                <FilePlus2 className="w-4 h-4 text-[#737373] dark:text-white/90" />
               </Button>
               <div className="relative copy-dropdown">
                 <Button
