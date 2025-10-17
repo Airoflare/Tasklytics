@@ -2,7 +2,6 @@
 
 import type { Task, Status, Priority, Tag } from "@/lib/types"
 import { formatDistanceToNow } from "date-fns"
-import { format } from 'date-fns-tz/format'
 import { toZonedTime } from 'date-fns-tz/toZonedTime'
 import { useTimezone } from "@/lib/timezone-context"
 import { Badge } from "@/components/ui/badge"
@@ -28,7 +27,7 @@ export function TableView({
 
   const formatDate = (date: string) => {
     const zonedDate = toZonedTime(new Date(date), timezone)
-    return format(zonedDate, "MMM d, yyyy", { timeZone: timezone })
+    return formatDistanceToNow(zonedDate, { addSuffix: true })
   }
 
   const getStatusById = (statusId: string) => statuses.find(s => s.id === statusId)
