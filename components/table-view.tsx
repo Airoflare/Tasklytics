@@ -62,7 +62,7 @@ export function TableView({
               >
                 <TableCell className="font-medium">
                   <div className="flex items-center gap-2">
-                    {task.title}
+                    <span className="line-clamp-2">{task.title}</span>
                     {task.attachments.length > 0 && (
                       <Paperclip className="w-3 h-3 text-muted-foreground" />
                     )}
