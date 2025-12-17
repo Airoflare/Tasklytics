@@ -9,6 +9,7 @@ export interface Task {
   deadline?: string
   createdAt: string
   updatedAt: string
+  workspaceId: string
 }
 
 export type Status = {
@@ -17,6 +18,7 @@ export type Status = {
   color: string
   order: number
   createdAt: string
+  workspaceId: string
 }
 
 export type Tag = {
@@ -24,6 +26,7 @@ export type Tag = {
   name: string
   color: string
   createdAt: string
+  workspaceId: string
 }
 
 export type Priority = {
@@ -31,6 +34,14 @@ export type Priority = {
   name: string
   color: string
   order: number
+  createdAt: string
+  workspaceId: string
+}
+
+export type Workspace = {
+  id: string
+  name: string
+  icon: string | null
   createdAt: string
 }
 

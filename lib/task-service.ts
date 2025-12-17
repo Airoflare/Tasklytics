@@ -2,9 +2,9 @@ import type { Task } from "./types"
 import { db } from "./db"
 
 export class TaskService {
-  static async getAllTasks(): Promise<Task[]> {
+  static async getAllTasks(workspaceId: string): Promise<Task[]> {
     try {
-      return await db.getAll<Task>("tasks")
+      return await db.getAllByWorkspace<Task>("tasks", workspaceId)
     } catch (error) {
       console.error("Error fetching tasks:", error)
       return []
@@ -20,7 +20,7 @@ export class TaskService {
     }
   }
 
-  static async createTask(taskData: Partial<Task>): Promise<Task> {
+  static async createTask(taskData: Partial<Task>, workspaceId: string): Promise<Task> {
     const now = new Date().toISOString()
     const task: Task = {
       id: crypto.randomUUID(),
@@ -33,6 +33,7 @@ export class TaskService {
       deadline: taskData.deadline,
       createdAt: now,
       updatedAt: now,
+      workspaceId,
     }
 
     try {
@@ -75,23 +76,5 @@ export class TaskService {
     }
   }
 
-  static async getAllTasks(): Promise<Task[]> {
-    try {
-      const tasks = await db.getAll<Task>("tasks");
-      return tasks;
-    } catch (error) {
-      console.error("Error fetching tasks:", error)
-      return []
-    }
-  }
 
-  static async getTask(id: string): Promise<Task | undefined> {
-    try {
-      const task = await db.get<Task>("tasks", id);
-      return task;
-    } catch (error) {
-      console.error("Error fetching task:", error)
-      return undefined
-    }
-  }
 }

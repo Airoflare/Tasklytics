@@ -1,7 +1,7 @@
 import type { Tag } from "./types"
 import { db } from "./db"
 
-const DEFAULT_TAGS: Omit<Tag, "id" | "createdAt">[] = [
+const DEFAULT_TAGS: Omit<Tag, "id" | "createdAt" | "workspaceId">[] = [
   { name: "Personal", color: "#22c55e" },
   { name: "Learning", color: "#eab308" },
   { name: "Work", color: "#3b82f6" },
@@ -10,9 +10,9 @@ const DEFAULT_TAGS: Omit<Tag, "id" | "createdAt">[] = [
 let initializationLock = false
 
 export class TagService {
-  static async getAllTags(): Promise<Tag[]> {
+  static async getAllTags(workspaceId: string): Promise<Tag[]> {
     try {
-      const tags = await db.getAll<Tag>("tags")
+      const tags = await db.getAllByWorkspace<Tag>("tags", workspaceId)
       return tags
     } catch (error) {
       console.error("Error fetching tags:", error)
@@ -20,7 +20,7 @@ export class TagService {
     }
   }
 
-  static async ensureDefaultTags(): Promise<void> {
+  static async ensureDefaultTags(workspaceId: string): Promise<void> {
     if (initializationLock) {
       return
     }
@@ -28,9 +28,9 @@ export class TagService {
     initializationLock = true
 
     try {
-      const tags = await db.getAll<Tag>("tags")
+      const tags = await db.getAllByWorkspace<Tag>("tags", workspaceId)
       if (tags.length === 0) {
-        await this.initializeDefaultTags()
+        await this.initializeDefaultTags(workspaceId)
       }
     } catch (error) {
       console.error("Error ensuring default tags:", error)
@@ -48,7 +48,7 @@ export class TagService {
     }
   }
 
-  static async createTag(tagData: Partial<Tag>): Promise<Tag> {
+  static async createTag(tagData: Partial<Tag>, workspaceId: string): Promise<Tag> {
     const now = new Date().toISOString()
 
     const tag: Tag = {
@@ -56,6 +56,7 @@ export class TagService {
       name: tagData.name || "",
       color: tagData.color || "#6b7280",
       createdAt: now,
+      workspaceId,
     }
 
     try {
@@ -97,7 +98,7 @@ export class TagService {
     }
   }
 
-  private static async initializeDefaultTags(): Promise<void> {
+  private static async initializeDefaultTags(workspaceId: string): Promise<void> {
     const now = new Date().toISOString()
 
     for (const tagData of DEFAULT_TAGS) {
@@ -105,6 +106,7 @@ export class TagService {
         id: crypto.randomUUID(),
         ...tagData,
         createdAt: now,
+        workspaceId,
       }
 
       try {

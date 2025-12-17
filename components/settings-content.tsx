@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
 
 import { useLanguage, LanguageKey } from "@/lib/language-context"
+import { useWorkspace } from "@/lib/workspace-context"
 import { db } from "@/lib/db"
 
 interface SettingsContentProps {
@@ -65,6 +66,7 @@ export function SettingsContent({
   onPriorityDelete,
 }: SettingsContentProps) {
   const { t } = useLanguage();
+  const { currentWorkspace } = useWorkspace();
   const [newStatusName, setNewStatusName] = useState("")
   const [newStatusColor, setNewStatusColor] = useState("#1e90ff")
   const [editingStatus, setEditingStatus] = useState<Status | null>(null)
@@ -210,9 +212,11 @@ export function SettingsContent({
     reader.onload = async (e) => {
       try {
         const importedData = JSON.parse(e.target?.result as string);
-        await db.importData(importedData);
-        alert(t("Data imported successfully! Please refresh the page."));
-        window.location.reload();
+        if (currentWorkspace) {
+          await db.importData(importedData, currentWorkspace.id);
+          alert(t("Data imported successfully! Please refresh the page."));
+          window.location.reload();
+        }
       } catch (error) {
         console.error("Error importing data:", error);
         alert(t("Failed to import data. Please ensure the file is a valid backup."));

@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { X, ChevronDown, Download } from "lucide-react"
 import { saveAttachment } from "@/lib/attachment-db"
 import { useLanguage } from "@/lib/language-context"
+import { useWorkspace } from "@/lib/workspace-context"
 import { isImageFile } from "@/lib/utils"
 
 interface CreateTaskModalProps {
@@ -32,6 +33,7 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, statuses, tags, pri
   const [deadline, setDeadline] = useState("")
   const [attachments, setAttachments] = useState<File[]>([])
   const { t } = useLanguage();
+  const { currentWorkspace } = useWorkspace();
 
   useEffect(() => {
     if (isOpen) {
@@ -47,7 +49,7 @@ export function CreateTaskModal({ isOpen, onClose, onSubmit, statuses, tags, pri
 
     const attachmentIds: string[] = []
     for (const file of attachments) {
-      const id = await saveAttachment(file)
+      const id = await saveAttachment(file, currentWorkspace?.id || "")
       attachmentIds.push(id)
     }
 

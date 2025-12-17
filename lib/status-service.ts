@@ -1,7 +1,7 @@
 import type { Status } from "./types"
 import { db } from "./db"
 
-const DEFAULT_STATUSES: Omit<Status, "id" | "createdAt">[] = [
+const DEFAULT_STATUSES: Omit<Status, "id" | "createdAt" | "workspaceId">[] = [
   { name: "Backlog", color: "#3b82f6", order: 0 },
   { name: "In Progress", color: "#eab308", order: 1 },
   { name: "Completed", color: "#22c55e", order: 2 },
@@ -12,9 +12,9 @@ const DEFAULT_STATUSES: Omit<Status, "id" | "createdAt">[] = [
 let initializationLock = false
 
 export class StatusService {
-  static async getAllStatuses(): Promise<Status[]> {
+  static async getAllStatuses(workspaceId: string): Promise<Status[]> {
     try {
-      const statuses = await db.getAll<Status>("statuses")
+      const statuses = await db.getAllByWorkspace<Status>("statuses", workspaceId)
       return statuses.sort((a, b) => a.order - b.order)
     } catch (error) {
       console.error("Error fetching statuses:", error)
@@ -22,7 +22,7 @@ export class StatusService {
     }
   }
 
-  static async ensureDefaultStatuses(): Promise<void> {
+  static async ensureDefaultStatuses(workspaceId: string): Promise<void> {
     if (initializationLock) {
       return
     }
@@ -30,9 +30,9 @@ export class StatusService {
     initializationLock = true
 
     try {
-      const statuses = await db.getAll<Status>("statuses")
+      const statuses = await db.getAllByWorkspace<Status>("statuses", workspaceId)
       if (statuses.length === 0) {
-        await this.initializeDefaultStatuses()
+        await this.initializeDefaultStatuses(workspaceId)
       }
     } catch (error) {
       console.error("Error ensuring default statuses:", error)
@@ -50,9 +50,9 @@ export class StatusService {
     }
   }
 
-  static async createStatus(statusData: Partial<Status>): Promise<Status> {
+  static async createStatus(statusData: Partial<Status>, workspaceId: string): Promise<Status> {
     const now = new Date().toISOString()
-    const existingStatuses = await this.getAllStatuses()
+    const existingStatuses = await this.getAllStatuses(workspaceId)
     const maxOrder = Math.max(...existingStatuses.map((s) => s.order), -1)
 
     const status: Status = {
@@ -61,6 +61,7 @@ export class StatusService {
       color: statusData.color || "#6b7280",
       order: statusData.order ?? maxOrder + 1,
       createdAt: now,
+      workspaceId,
     }
 
     try {
@@ -118,7 +119,7 @@ export class StatusService {
     }
   }
 
-  private static async initializeDefaultStatuses(): Promise<void> {
+  private static async initializeDefaultStatuses(workspaceId: string): Promise<void> {
     const now = new Date().toISOString()
 
     for (const statusData of DEFAULT_STATUSES) {
@@ -126,6 +127,7 @@ export class StatusService {
         id: crypto.randomUUID(),
         ...statusData,
         createdAt: now,
+        workspaceId,
       }
 
       try {

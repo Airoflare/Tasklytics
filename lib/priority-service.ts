@@ -1,7 +1,7 @@
 import type { Priority } from "./types"
 import { db } from "./db"
 
-const DEFAULT_PRIORITIES: Omit<Priority, "id" | "createdAt">[] = [
+const DEFAULT_PRIORITIES: Omit<Priority, "id" | "createdAt" | "workspaceId">[] = [
   { name: "Low", color: "#22c55e", order: 0 },
   { name: "Medium", color: "#eab308", order: 1 },
   { name: "High", color: "#ef4444", order: 2 },
@@ -10,9 +10,9 @@ const DEFAULT_PRIORITIES: Omit<Priority, "id" | "createdAt">[] = [
 let initializationLock = false
 
 export class PriorityService {
-  static async getAllPriorities(): Promise<Priority[]> {
+  static async getAllPriorities(workspaceId: string): Promise<Priority[]> {
     try {
-      const priorities = await db.getAll<Priority>("priorities")
+      const priorities = await db.getAllByWorkspace<Priority>("priorities", workspaceId)
       return priorities.sort((a, b) => a.order - b.order)
     } catch (error) {
       console.error("Error fetching priorities:", error)
@@ -20,7 +20,7 @@ export class PriorityService {
     }
   }
 
-  static async ensureDefaultPriorities(): Promise<void> {
+  static async ensureDefaultPriorities(workspaceId: string): Promise<void> {
     if (initializationLock) {
       return
     }
@@ -28,9 +28,9 @@ export class PriorityService {
     initializationLock = true
 
     try {
-      const priorities = await db.getAll<Priority>("priorities")
+      const priorities = await db.getAllByWorkspace<Priority>("priorities", workspaceId)
       if (priorities.length === 0) {
-        await this.initializeDefaultPriorities()
+        await this.initializeDefaultPriorities(workspaceId)
       }
     } catch (error) {
       console.error("Error ensuring default priorities:", error)
@@ -48,9 +48,9 @@ export class PriorityService {
     }
   }
 
-  static async createPriority(priorityData: Partial<Priority>): Promise<Priority> {
+  static async createPriority(priorityData: Partial<Priority>, workspaceId: string): Promise<Priority> {
     const now = new Date().toISOString()
-    const existingPriorities = await this.getAllPriorities()
+    const existingPriorities = await this.getAllPriorities(workspaceId)
     const maxOrder = Math.max(...existingPriorities.map((p) => p.order), -1)
 
     const priority: Priority = {
@@ -59,6 +59,7 @@ export class PriorityService {
       color: priorityData.color || "#6b7280",
       order: priorityData.order ?? maxOrder + 1,
       createdAt: now,
+      workspaceId,
     }
 
     try {
@@ -116,7 +117,7 @@ export class PriorityService {
     }
   }
 
-  private static async initializeDefaultPriorities(): Promise<void> {
+  private static async initializeDefaultPriorities(workspaceId: string): Promise<void> {
     const now = new Date().toISOString()
 
     for (const priorityData of DEFAULT_PRIORITIES) {
@@ -124,6 +125,7 @@ export class PriorityService {
         id: crypto.randomUUID(),
         ...priorityData,
         createdAt: now,
+        workspaceId,
       }
 
       try {

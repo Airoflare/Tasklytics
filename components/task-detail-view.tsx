@@ -13,6 +13,7 @@ import { toZonedTime } from 'date-fns-tz/toZonedTime'
 import { format } from 'date-fns-tz/format'
 import { useTimezone } from "@/lib/timezone-context"
 import { useLanguage } from "@/lib/language-context"
+import { useWorkspace } from "@/lib/workspace-context"
 import TextareaAutosize from "react-textarea-autosize"
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -42,19 +43,20 @@ export function TaskDetailView({
   tags,
   priorities,
 }: TaskDetailViewProps) {
-  const [editedTask, setEditedTask] = useState<Task | null>(task || null)
-  const [newlyAddedAttachments, setNewlyAddedAttachments] = useState<{ id: string; file: File }[]>([])
-  const [loadedExistingAttachmentFiles, setLoadedExistingAttachmentFiles] = useState<{ id: string; file: File }[]>([])
-  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null)
-  const [isEditingTitle, setIsEditingTitle] = useState(false)
-  const [isEditingDescription, setIsEditingDescription] = useState(false)
-  const [descriptionMode, setDescriptionMode] = useState<'edit' | 'read'>('read')
-  const [showCopyDropdown, setShowCopyDropdown] = useState(false)
-  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied'>('idle')
-
-
   const { timezone } = useTimezone();
   const { t } = useLanguage();
+  const { currentWorkspace } = useWorkspace();
+
+  const [editedTask, setEditedTask] = useState<Task | null>(null)
+  const [showCopyDropdown, setShowCopyDropdown] = useState(false)
+  const [loadedExistingAttachmentFiles, setLoadedExistingAttachmentFiles] = useState<{ id: string; file: File }[]>([])
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied'>('idle')
+  const [codeBlockCopyStatuses, setCodeBlockCopyStatuses] = useState<Record<string, 'idle' | 'copied'>>({})
+  const [newlyAddedAttachments, setNewlyAddedAttachments] = useState<{ id: string; file: File }[]>([])
+  const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [descriptionMode, setDescriptionMode] = useState<'read' | 'edit'>('read')
+  const [isEditingDescription, setIsEditingDescription] = useState(false)
+  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null)
 
   useEffect(() => {
     if (task) {
@@ -81,7 +83,7 @@ export function TaskDetailView({
     if (!task) return
     const loadedFiles: { id: string; file: File }[] = []
     for (const attachmentId of task.attachments) {
-      const file = await getAttachment(attachmentId)
+      const file = await getAttachment(attachmentId, currentWorkspace?.id || "")
       if (file) {
         loadedFiles.push({ id: attachmentId, file })
       }
@@ -140,19 +142,17 @@ export function TaskDetailView({
     try {
       await navigator.clipboard.writeText(code)
       // Update state to show copied
-      setCodeBlockCopyStatuses(prev => {
-        const newMap = new Map(prev)
-        newMap.set(blockId, 'copied')
-        return newMap
-      })
+      setCodeBlockCopyStatuses(prev => ({
+        ...prev,
+        [blockId]: 'copied'
+      }))
 
       // Reset after 2 seconds
       setTimeout(() => {
-        setCodeBlockCopyStatuses(prev => {
-          const newMap = new Map(prev)
-          newMap.set(blockId, 'idle')
-          return newMap
-        })
+        setCodeBlockCopyStatuses(prev => ({
+          ...prev,
+          [blockId]: 'idle'
+        }))
       }, 800)
     } catch (err) {
     }
@@ -189,7 +189,7 @@ export function TaskDetailView({
 
     for (const file of newFiles) {
       if (!newAttachmentNames.has(file.name)) {
-        const id = await saveAttachment(file)
+        const id = await saveAttachment(file, currentWorkspace?.id || "")
         filesToAdd.push({ id, file })
         idsToAddToTask.push(id)
       }
@@ -204,7 +204,7 @@ export function TaskDetailView({
       setNewlyAddedAttachments((prev) => prev.filter((attachment) => attachment.id !== attachmentId))
     } else {
       if (!editedTask) return
-      await deleteAttachment(attachmentId)
+      await deleteAttachment(attachmentId, currentWorkspace?.id || "")
       handleUpdate({ attachments: editedTask.attachments.filter((id) => id !== attachmentId) })
       setLoadedExistingAttachmentFiles((prev) => prev.filter((attachment) => attachment.id !== attachmentId))
     }

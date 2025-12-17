@@ -20,6 +20,7 @@ import { SettingsContent } from "@/components/settings-content"
 import { useTimezone } from "@/lib/timezone-context"
 import { settingsService } from "@/lib/settings-service"
 import { useLanguage } from "@/lib/language-context"
+import { useWorkspace } from "@/lib/workspace-context"
 
 export default function Home() {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -42,6 +43,7 @@ export default function Home() {
   const [appIcon, setAppIcon] = useState<string | null>("/logo.webp")
   const { timezone, setTimezone } = useTimezone();
   const { language, setLanguage, t } = useLanguage();
+  const { currentWorkspace } = useWorkspace();
 
   // Track loading states
   const [isAppNameLoaded, setIsAppNameLoaded] = useState(false)
@@ -94,9 +96,11 @@ export default function Home() {
     
     // Load app name from IndexedDB
     const loadAppName = async () => {
-      const storedAppName = await settingsService.getAppName()
-      if (storedAppName && storedAppName !== "Tasklytics") {
-        setAppName(storedAppName)
+      if (currentWorkspace) {
+        const storedAppName = await settingsService.getAppName(currentWorkspace.id)
+        if (storedAppName && storedAppName !== "Tasklytics") {
+          setAppName(storedAppName)
+        }
       }
       setIsAppNameLoaded(true)
     }
@@ -104,12 +108,14 @@ export default function Home() {
 
     // Load app icon from IndexedDB
     const loadAppIcon = async () => {
-      const storedAppIcon = await settingsService.getAppIcon()
-      if (storedAppIcon && storedAppIcon !== "/logo.webp") {
-        setAppIcon(storedAppIcon)
-      } else {
-        // Keep default app icon if not found or if it's the default
-        setAppIcon("/logo.webp")
+      if (currentWorkspace) {
+        const storedAppIcon = await settingsService.getAppIcon(currentWorkspace.id)
+        if (storedAppIcon && storedAppIcon !== "/logo.webp") {
+          setAppIcon(storedAppIcon)
+        } else {
+          // Keep default app icon if not found or if it's the default
+          setAppIcon("/logo.webp")
+        }
       }
       setIsAppIconLoaded(true)
     }
@@ -122,7 +128,7 @@ export default function Home() {
     setFilterPriorityId(searchParams.get("filterPriorityId") || null)
     setFilterTagIds(searchParams.get("filterTagIds")?.split(",") || [])
     setSortBy(searchParams.get("sortBy") || 'timeAdded-desc')
-  }, [])
+  }, [currentWorkspace])
 
   useEffect(() => {
     localStorage.setItem("currentView", currentView)
@@ -140,12 +146,12 @@ export default function Home() {
 
   useEffect(() => {
     const saveAppName = async () => {
-      if (isAppNameLoaded) {
-        await settingsService.setAppName(appName)
+      if (isAppNameLoaded && currentWorkspace) {
+        await settingsService.setAppName(appName, currentWorkspace.id)
       }
     }
     saveAppName()
-  }, [appName, isAppNameLoaded])
+  }, [appName, isAppNameLoaded, currentWorkspace])
 
   // Update document title when appName changes (only after initial load)
   useEffect(() => {
@@ -219,33 +225,39 @@ export default function Home() {
 
   useEffect(() => {
     const initialize = async () => {
-      await Promise.all([
-        StatusService.ensureDefaultStatuses(),
-        TagService.ensureDefaultTags(),
-        PriorityService.ensureDefaultPriorities(),
-      ])
-      await loadData()
+      if (currentWorkspace) {
+        await Promise.all([
+          StatusService.ensureDefaultStatuses(currentWorkspace.id),
+          TagService.ensureDefaultTags(currentWorkspace.id),
+          PriorityService.ensureDefaultPriorities(currentWorkspace.id),
+        ])
+        await loadData()
+      }
     }
     initialize()
-  }, [])
+  }, [currentWorkspace])
 
   const loadData = async () => {
-    const [tasksData, statusesData, tagsData, prioritiesData] = await Promise.all([
-      TaskService.getAllTasks(),
-      StatusService.getAllStatuses(),
-      TagService.getAllTags(),
-      PriorityService.getAllPriorities(),
-    ])
-    setTasks(tasksData)
-    setStatuses(statusesData)
-    setTags(tagsData)
-    setPriorities(prioritiesData)
+    if (currentWorkspace) {
+      const [tasksData, statusesData, tagsData, prioritiesData] = await Promise.all([
+        TaskService.getAllTasks(currentWorkspace.id),
+        StatusService.getAllStatuses(currentWorkspace.id),
+        TagService.getAllTags(currentWorkspace.id),
+        PriorityService.getAllPriorities(currentWorkspace.id),
+      ])
+      setTasks(tasksData)
+      setStatuses(statusesData)
+      setTags(tagsData)
+      setPriorities(prioritiesData)
+    }
   }
 
   const handleTaskCreate = async (taskData: Partial<Task>) => {
-    const newTask = await TaskService.createTask(taskData)
-    await loadData()
-    setIsCreateModalOpen(false)
+    if (currentWorkspace) {
+      const newTask = await TaskService.createTask(taskData, currentWorkspace.id)
+      await loadData()
+      setIsCreateModalOpen(false)
+    }
   }
 
   const handleTaskUpdate = async (taskId: string, updates: Partial<Task>) => {
@@ -292,12 +304,14 @@ export default function Home() {
   };
 
   const handleAppIconChange = async (value: string | null | React.ChangeEvent<HTMLInputElement>) => {
+    if (!currentWorkspace) return
+
     if (value === null) {
       setAppIcon("/logo.webp");
-      await settingsService.setAppIcon("/logo.webp");
+      await settingsService.setAppIcon("/logo.webp", currentWorkspace.id);
     } else if (typeof value === 'string') {
       setAppIcon(value);
-      await settingsService.setAppIcon(value);
+      await settingsService.setAppIcon(value, currentWorkspace.id);
     } else { // It's a ChangeEvent
       const file = value.target.files?.[0];
       if (file) {
@@ -305,12 +319,12 @@ export default function Home() {
         reader.onloadend = async () => {
           const base64String = reader.result as string;
           setAppIcon(base64String);
-          await settingsService.setAppIcon(base64String);
+          await settingsService.setAppIcon(base64String, currentWorkspace.id);
         };
         reader.readAsDataURL(file);
       } else {
         setAppIcon(null);
-        await settingsService.setAppIcon(null);
+        await settingsService.setAppIcon(null, currentWorkspace.id);
       }
     }
   };
@@ -521,8 +535,6 @@ export default function Home() {
         selectedStatus={selectedStatus}
         onStatusSelect={handleStatusSelect}
         onSettingsClick={handleSettingsClick}
-        appName={appName}
-        appIcon={appIcon}
       />
 
       {currentPage === "settings" ? (
@@ -544,10 +556,12 @@ export default function Home() {
             setStatuses(reorderedStatuses);
             await StatusService.updateStatusOrder(reorderedStatuses.map(s => s.id));
           }}
-          onStatusCreate={async (statusData) => {
-            await StatusService.createStatus(statusData);
-            await loadData();
-          }}
+           onStatusCreate={async (statusData) => {
+             if (currentWorkspace) {
+               await StatusService.createStatus(statusData, currentWorkspace.id);
+               await loadData();
+             }
+           }}
           onStatusUpdate={async (statusId, updates) => {
             await StatusService.updateStatus(statusId, updates);
             await loadData();
@@ -556,10 +570,12 @@ export default function Home() {
             await StatusService.deleteStatus(statusId);
             await loadData();
           }}
-          onTagCreate={async (tagData) => {
-            await TagService.createTag(tagData);
-            await loadData();
-          }}
+           onTagCreate={async (tagData) => {
+             if (currentWorkspace) {
+               await TagService.createTag(tagData, currentWorkspace.id);
+               await loadData();
+             }
+           }}
           onTagUpdate={async (tagId, updates) => {
             await TagService.updateTag(tagId, updates);
             await loadData();
@@ -569,10 +585,12 @@ export default function Home() {
             await loadData();
           }}
           priorities={priorities}
-          onPriorityCreate={async (priorityData) => {
-            await PriorityService.createPriority(priorityData);
-            await loadData();
-          }}
+           onPriorityCreate={async (priorityData) => {
+             if (currentWorkspace) {
+               await PriorityService.createPriority(priorityData, currentWorkspace.id);
+               await loadData();
+             }
+           }}
           onPriorityUpdate={async (priorityId, updates) => {
             await PriorityService.updatePriority(priorityId, updates);
             await loadData();

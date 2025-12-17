@@ -1,6 +1,6 @@
 class IndexedDBManager {
   private dbName = "TasklyticsDB"
-  private version = 6
+  private version = 7
   private db: IDBDatabase | null = null
 
   async init(): Promise<void> {
@@ -34,6 +34,9 @@ class IndexedDBManager {
         }
         if (!db.objectStoreNames.contains("attachments")) {
           db.createObjectStore("attachments", { keyPath: "id" });
+        }
+        if (!db.objectStoreNames.contains("workspaces")) {
+          db.createObjectStore("workspaces", { keyPath: "id" });
         }
       }
     })
@@ -162,23 +165,66 @@ class IndexedDBManager {
     return exportedData;
   }
 
-  async importData(data: any): Promise<void> {
+  async clearWorkspaceData(workspaceId: string): Promise<void> {
     if (!this.db) await this.init();
 
-    const storeNames = this.getAllStoreNames();
+    const workspaceStores = ["tasks", "statuses", "tags", "priorities", "attachments"];
 
-    // Clear existing data
-    for (const storeName of storeNames) {
-      await this.clearStore(storeName);
+    for (const storeName of workspaceStores) {
+      const allItems = await this.getAllByWorkspace(storeName, workspaceId);
+      for (const item of allItems as any[]) {
+        await this.delete(storeName, item.id);
+      }
     }
 
-    // Import new data
-    for (const storeName of storeNames) {
+    // Clear workspace-specific settings
+    await this.deleteSetting(`appName_${workspaceId}`);
+    await this.deleteSetting(`appIcon_${workspaceId}`);
+  }
+
+  async importData(data: any, workspaceId: string): Promise<void> {
+    if (!this.db) await this.init();
+
+    const workspaceStores = ["tasks", "statuses", "tags", "priorities", "attachments"];
+
+    // Clear existing workspace data first
+    await this.clearWorkspaceData(workspaceId);
+
+    // Import data with workspaceId
+    for (const storeName of workspaceStores) {
       if (data[storeName]) {
         for (const item of data[storeName]) {
-          await this.add(storeName, item);
+          const itemWithWorkspace = { ...item, workspaceId };
+          await this.add(storeName, itemWithWorkspace);
         }
       }
+    }
+
+    // Import settings with workspace-specific keys
+    if (data.settings) {
+      let workspaceName = "Imported Workspace";
+      let workspaceIcon: string | null = "/logo.webp";
+
+      for (const setting of data.settings) {
+        if (setting.key === 'appName') {
+          workspaceName = setting.value;
+          await this.putSetting(`appName_${workspaceId}`, setting.value);
+        } else if (setting.key === 'appIcon') {
+          workspaceIcon = setting.value;
+          await this.putSetting(`appIcon_${workspaceId}`, setting.value);
+        } else if (setting.key === 'language') {
+          // Keep global settings
+          await this.putSetting(setting.key, setting.value);
+        }
+      }
+
+      // Update workspace name and icon
+      await this.put("workspaces", {
+        id: workspaceId,
+        name: workspaceName,
+        icon: workspaceIcon,
+        createdAt: new Date().toISOString()
+      });
     }
   }
 
@@ -202,6 +248,23 @@ class IndexedDBManager {
     for (const storeName of storeNames) {
       await this.clearStore(storeName);
     }
+  }
+
+  async getAllByWorkspace<T>(storeName: string, workspaceId: string): Promise<T[]> {
+    if (!this.db) await this.init()
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction([storeName], "readonly")
+      const store = transaction.objectStore(storeName)
+      const request = store.getAll()
+
+      request.onerror = () => reject(request.error)
+      request.onsuccess = () => {
+        const allItems = request.result as T[]
+        const filteredItems = allItems.filter((item: any) => item.workspaceId === workspaceId)
+        resolve(filteredItems)
+      }
+    })
   }
 }
 

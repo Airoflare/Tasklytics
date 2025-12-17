@@ -5,7 +5,7 @@ let db: IDBDatabase;
 
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, 6);
+    const request = indexedDB.open(DB_NAME, 7);
 
     request.onupgradeneeded = (event) => {
       db = (event.target as IDBOpenDBRequest).result;
@@ -23,7 +23,7 @@ function openDatabase(): Promise<IDBDatabase> {
   });
 }
 
-export async function saveAttachment(file: File): Promise<string> {
+export async function saveAttachment(file: File, workspaceId: string): Promise<string> {
   if (!db) {
     db = await openDatabase();
   }
@@ -36,7 +36,7 @@ export async function saveAttachment(file: File): Promise<string> {
       const data = event.target?.result;
       const transaction = db.transaction(STORE_NAME, 'readwrite');
       const store = transaction.objectStore(STORE_NAME);
-      const request = store.add({ id, name: file.name, type: file.type, data });
+      const request = store.add({ id, name: file.name, type: file.type, data, workspaceId });
 
       request.onsuccess = () => {
         resolve(id);
@@ -50,7 +50,7 @@ export async function saveAttachment(file: File): Promise<string> {
   });
 }
 
-export async function getAttachment(id: string): Promise<File | null> {
+export async function getAttachment(id: string, workspaceId: string): Promise<File | null> {
   if (!db) {
     db = await openDatabase();
   }
@@ -82,7 +82,7 @@ export async function getAttachment(id: string): Promise<File | null> {
   });
 }
 
-export async function deleteAttachment(id: string): Promise<void> {
+export async function deleteAttachment(id: string, workspaceId: string): Promise<void> {
   if (!db) {
     db = await openDatabase();
   }

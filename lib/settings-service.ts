@@ -1,27 +1,26 @@
 import { db } from "./db"
 
-const APP_NAME_KEY = "appName"
-const APP_ICON_KEY = "appIcon"
 const LANGUAGE_KEY = "language"
 
 export const settingsService = {
-  async getAppName(): Promise<string | undefined> {
-    return db.getSetting<string>(APP_NAME_KEY)
+  async getAppName(workspaceId: string): Promise<string | undefined> {
+    return db.getSetting<string>(`appName_${workspaceId}`)
   },
 
-  async setAppName(name: string): Promise<void> {
-    await db.putSetting<string>(APP_NAME_KEY, name)
+  async setAppName(name: string, workspaceId: string): Promise<void> {
+    await db.putSetting<string>(`appName_${workspaceId}`, name)
   },
 
-  async getAppIcon(): Promise<string | undefined> {
-    return db.getSetting<string>(APP_ICON_KEY)
+  async getAppIcon(workspaceId: string): Promise<string | undefined> {
+    return db.getSetting<string>(`appIcon_${workspaceId}`)
   },
 
-  async setAppIcon(iconDataUrl: string | null): Promise<void> {
+  async setAppIcon(iconDataUrl: string | null, workspaceId: string): Promise<void> {
+    const key = `appIcon_${workspaceId}`
     if (iconDataUrl === null) {
-      await db.deleteSetting(APP_ICON_KEY);
+      await db.deleteSetting(key);
     } else {
-      await db.putSetting<string>(APP_ICON_KEY, iconDataUrl)
+      await db.putSetting<string>(key, iconDataUrl)
     }
   },
 

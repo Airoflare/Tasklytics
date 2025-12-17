@@ -3,11 +3,13 @@
 import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Settings, Fan, Sun, Moon, Star } from "lucide-react"
+import { Settings, Fan, BadgePlus, Sun, Moon, Star, ChevronDown } from "lucide-react"
 import { useTheme } from "next-themes"
 import type { Status } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
 import { useLanguage } from "@/lib/language-context"
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
+import { useWorkspace } from "@/lib/workspace-context"
 
 interface SidebarProps {
   statuses: (Status & { count: number })[]
@@ -15,8 +17,6 @@ interface SidebarProps {
   onStatusSelect: (statusId: string | null) => void
   hiddenStatuses?: string[]
   onToggleStatusVisibility?: (statusId: string) => void
-  appName?: string
-  appIcon?: string | null
   onSettingsClick: () => void
 }
 
@@ -25,8 +25,6 @@ export function Sidebar({
   selectedStatus,
   onStatusSelect,
   hiddenStatuses = [],
-  appName = "Tasklytics",
-  appIcon = null,
   onSettingsClick,
 }: SidebarProps) {
   const [showHiddenStatuses, setShowHiddenStatuses] = useState(false)
@@ -35,6 +33,7 @@ export function Sidebar({
   const currentPage = searchParams.get("page")
   const { theme, setTheme } = useTheme()
   const { t } = useLanguage();
+  const { currentWorkspace, workspaces, setCurrentWorkspace, createWorkspace } = useWorkspace();
 
   const visibleStatuses = statuses.filter((status) => !hiddenStatuses.includes(status.id))
   const hiddenStatusList = statuses.filter((status) => hiddenStatuses.includes(status.id))
@@ -49,15 +48,51 @@ export function Sidebar({
         <div className="p-4">
           <div className="mb-6">
             <div className="space-y-1">
-              <div className="w-full justify-between text-left h-auto p-2 flex items-center">
-                <div className="flex items-center gap-2">
-                  {appIcon ? (
-                    <img src={appIcon || "/placeholder.svg"} alt={t("App Icon")} className="w-6 h-6 rounded-full" />
-                  ) : (
-                    <Fan className="w-4 h-4 text-[#737373] dark:text-[#9E9E9E]" />
-                  )}
-                  <span className="text-[#737373] dark:text-[#E8E7EA]">{t(appName)}</span>
-                </div>
+              <div className="flex items-center justify-between">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <div className="flex items-center gap-2 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 rounded px-2 py-1 flex-1">
+                      {currentWorkspace?.icon ? (
+                        <img src={currentWorkspace.icon} alt={t("Workspace Icon")} className="w-6 h-6 rounded-full" />
+                      ) : (
+                        <Fan className="w-4 h-4 text-[#737373] dark:text-[#9E9E9E]" />
+                      )}
+                      <span className="text-[#737373] dark:text-[#E8E7EA] text-sm">{currentWorkspace?.name || t("Tasklytics")}</span>
+                      <ChevronDown className="w-4 h-4 text-[#737373] dark:text-[#9E9E9E]" />
+                    </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56 bg-white border-black/10 dark:bg-[#090909] dark:border-[#262626]/50">
+                    {workspaces.map((workspace) => (
+                      <DropdownMenuItem
+                        key={workspace.id}
+                        onClick={() => setCurrentWorkspace(workspace)}
+                        className={`text-black/60 dark:text-white/85 ${workspace.id === currentWorkspace?.id ? 'bg-black/10 dark:bg-white/10' : ''}`}
+                      >
+                        <div className="flex items-center gap-2">
+                          {workspace.icon ? (
+                            <img src={workspace.icon} alt={workspace.name} className="w-4 h-4 rounded-full" />
+                          ) : (
+                            <Fan className="w-4 h-4" />
+                          )}
+                          {workspace.name}
+                        </div>
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={async () => {
+                        const newWorkspace = await createWorkspace("New Workspace");
+                        setCurrentWorkspace(newWorkspace);
+                      }}
+                      className="text-black/60 dark:text-white/85 "
+                    >
+                      <div className="flex items-center gap-2 text-sm">
+                        <BadgePlus className="w-4 h-4" />
+                        Create New Workspace
+                      </div>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -102,7 +137,7 @@ export function Sidebar({
                   >
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: status.color }} />
-                      <span className="text-[#737373] dark:text-[#E8E7EA] ">{status.name}</span>
+                      <span className="text-[#737373] dark:text-[#E8E7EA] text-sm">{status.name}</span>
                     </div>
                     <Badge variant="secondary" className="text-xs text-[#737373] bg-black/10 dark:text-white/50 dark:bg-white/10">
                       {status.count}

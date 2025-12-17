@@ -5,6 +5,7 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { LanguageProvider } from "@/lib/language-context"
 import { TimezoneProvider } from "@/lib/timezone-context"
+import { WorkspaceProvider } from "@/lib/workspace-context"
 
 import { AppContentWrapper } from "@/components/app-content-wrapper";
 
@@ -56,9 +57,11 @@ export default function RootLayout({
         >
           <LanguageProvider>
             <TimezoneProvider>
-              <AppContentWrapper>
-                {children}
-              </AppContentWrapper>
+              <WorkspaceProvider>
+                <AppContentWrapper>
+                  {children}
+                </AppContentWrapper>
+              </WorkspaceProvider>
             </TimezoneProvider>
           </LanguageProvider>
         </ThemeProvider>
