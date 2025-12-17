@@ -225,24 +225,28 @@ export function SettingsContent({
     reader.readAsText(file);
   };
 
-  const handleDeleteAllData = async () => {
+  const handleDeleteWorkspace = async () => {
+    if (!currentWorkspace) return;
+
     try {
       // For WebKit packaged apps, window.confirm might not work properly
       // Use a simple prompt or direct action with warning
-      const userInput = prompt(t("Type 'DELETE' to confirm deletion of all data. This action cannot be undone:"));
-      if (userInput === 'DELETE') {
-        await db.clearAllStores();
-        alert(t("All data deleted successfully! Please refresh the page."));
+      const userInput = prompt("Type 'DELETE WORKSPACE' to confirm deletion of this workspace. This action cannot be undone:");
+      if (userInput === 'DELETE WORKSPACE') {
+        await db.clearWorkspaceData(currentWorkspace.id);
+        // Delete the workspace record
+        await db.delete("workspaces", currentWorkspace.id);
+        alert("Workspace deleted successfully! Switching to another workspace.");
         // Use setTimeout to ensure alert is shown before reload
         setTimeout(() => {
           window.location.reload();
         }, 500);
       } else if (userInput !== null) {
-        alert(t("Deletion cancelled. Please type 'DELETE' exactly to confirm."));
+        alert("Deletion cancelled. Please type 'DELETE WORKSPACE' exactly to confirm.");
       }
     } catch (error) {
       console.error("Delete failed:", error);
-      alert(t("Failed to delete data. Please try again."));
+      alert("Failed to delete workspace. Please try again.");
     }
   };
 
@@ -759,9 +763,9 @@ export function SettingsContent({
                       variant="destructive"
                       size="sm"
                       className="text-sm dark:bg-red-600/90"
-                      onClick={handleDeleteAllData}
+                      onClick={handleDeleteWorkspace}
                     >
-                      {t("Delete All Data")}
+                      {t("Delete Workspace")}
                     </Button>
                   </div>
                 </div>
