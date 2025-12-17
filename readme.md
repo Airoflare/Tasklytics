@@ -11,9 +11,6 @@ It's built as a fully static Progressive Web App (PWA), using IndexedDB for clie
 
 ## Screenshots
 
-<details>
-<summary><strong>Click to view</strong></summary>
-
 <table>
   <tr>
     <td align="center">
@@ -106,7 +103,6 @@ It's built as a fully static Progressive Web App (PWA), using IndexedDB for clie
     </td>
   </tr>
 </table>
-</details>
 
 <br />
 
@@ -118,6 +114,9 @@ It's built as a fully static Progressive Web App (PWA), using IndexedDB for clie
     *   **Statuses:** Define your own workflow statuses (e.g., To Do, In Progress, Done).
     *   **Priorities:** Set custom priority levels for your tasks.
     *   **Tags:** Organize your tasks with custom tags.
+*   **Workspaces:**
+    *   Create and manage multiple workspaces to separate projects.
+    *   Each workspace has its own tasks, statuses, priorities, and tags.
 *   **Internationalization:** Supports multiple languages (English, German, and Spanish).
 *   **Theming:** Switch between light and dark themes.
 *   **Timezone Support:** Display dates and times in your local timezone.
