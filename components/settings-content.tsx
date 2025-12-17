@@ -305,7 +305,7 @@ export function SettingsContent({
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* App Icon */}
                     <div className="p-4 rounded-lg border text-[#737373] dark:text-[#E8E7EA border-black/10 bg-black/5 dark:bg-[#090909] dark:border-[#262626]">
-                      <h3 className=" text-[#737373] dark:text-[#E8E7EA] text-sm font-medium mb-2">{t("App Icon")}</h3>
+                       <h3 className=" text-[#737373] dark:text-[#E8E7EA] text-sm font-medium mb-2">{t("Workspace Icon")}</h3>
                       <p className="text-[#737373] dark:text-[#9E9E9E] text-xs mb-3">{t("Upload a custom icon to replace the default icon in the sidebar.")}</p>
                       <div className="flex items-center gap-4">
                         <div className="w-8 h-8 border border-gray-700 bg-black/10 dark:bg-[#090909] dark:border-[#262626] flex items-center justify-center overflow-hidden rounded-full">
@@ -355,7 +355,7 @@ export function SettingsContent({
 
                     {/* App Name */}
                     <div className="p-4 rounded-lg border text-[#737373] dark:text-[#E8E7EA] border-black/10 bg-black/5 dark:bg-[#090909] dark:border-[#262626]">
-                      <h3 className=" text-[#737373] dark:text-[#E8E7EA] text-sm font-medium mb-2">{t("App Name")}</h3>
+                       <h3 className=" text-[#737373] dark:text-[#E8E7EA] text-sm font-medium mb-2">{t("Workspace Name")}</h3>
                       <p className="text-[#737373] dark:text-[#9E9E9E] text-xs mb-3">{t("Change the name displayed in the sidebar.")}</p>
                       <Input
                         value={appName}

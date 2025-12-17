@@ -57,6 +57,12 @@ export class WorkspaceService {
 
     try {
       await db.add("workspaces", workspace)
+
+      // Set workspace-specific settings
+      const { db: dbInstance } = await import("./db")
+      await dbInstance.putSetting(`appName_${workspace.id}`, workspace.name)
+      await dbInstance.putSetting(`appIcon_${workspace.id}`, workspace.icon || "/logo.webp")
+
       return workspace
     } catch (error) {
       console.error("Error creating workspace:", error)
@@ -138,6 +144,10 @@ export class WorkspaceService {
 
     try {
       await db.add("workspaces", workspace)
+
+      // Set workspace-specific settings for default workspace
+      await db.putSetting(`appName_${workspace.id}`, workspace.name)
+      await db.putSetting(`appIcon_${workspace.id}`, workspace.icon || "/logo.webp")
     } catch (error) {
       console.error("Error initializing default workspace:", error)
     }

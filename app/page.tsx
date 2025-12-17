@@ -16,6 +16,7 @@ import { TaskService } from "@/lib/task-service"
 import { StatusService } from "@/lib/status-service"
 import { TagService } from "@/lib/tag-service"
 import { PriorityService } from "@/lib/priority-service"
+import { WorkspaceService } from "@/lib/workspace-service"
 import { SettingsContent } from "@/components/settings-content"
 import { useTimezone } from "@/lib/timezone-context"
 import { settingsService } from "@/lib/settings-service"
@@ -41,9 +42,20 @@ export default function Home() {
   const [sortBy, setSortBy] = useState<string>('timeAdded-desc')
   const [appName, setAppName] = useState("Tasklytics")
   const [appIcon, setAppIcon] = useState<string | null>("/logo.webp")
+
+  const handleSetAppName = async (name: string) => {
+    setAppName(name);
+    if (currentWorkspace) {
+      await settingsService.setAppName(name, currentWorkspace.id);
+      // Update workspace record
+      await WorkspaceService.updateWorkspace(currentWorkspace.id, { name });
+      // Update current workspace state
+      updateCurrentWorkspace({ name });
+    }
+  }
   const { timezone, setTimezone } = useTimezone();
   const { language, setLanguage, t } = useLanguage();
-  const { currentWorkspace } = useWorkspace();
+  const { currentWorkspace, updateCurrentWorkspace } = useWorkspace();
 
   // Track loading states
   const [isAppNameLoaded, setIsAppNameLoaded] = useState(false)
@@ -128,6 +140,33 @@ export default function Home() {
     setFilterPriorityId(searchParams.get("filterPriorityId") || null)
     setFilterTagIds(searchParams.get("filterTagIds")?.split(",") || [])
     setSortBy(searchParams.get("sortBy") || 'timeAdded-desc')
+  }, [currentWorkspace])
+
+  // Reload workspace-specific settings when workspace changes
+  useEffect(() => {
+    const loadWorkspaceSettings = async () => {
+      if (currentWorkspace) {
+        // Load app name for current workspace
+        const storedAppName = await settingsService.getAppName(currentWorkspace.id)
+        if (storedAppName) {
+          setAppName(storedAppName)
+        } else {
+          // Use workspace name as fallback
+          setAppName(currentWorkspace.name)
+        }
+
+        // Load app icon for current workspace
+        const storedAppIcon = await settingsService.getAppIcon(currentWorkspace.id)
+        if (storedAppIcon) {
+          setAppIcon(storedAppIcon)
+        } else {
+          // Use workspace icon as fallback
+          setAppIcon(currentWorkspace.icon || "/logo.webp")
+        }
+      }
+    }
+
+    loadWorkspaceSettings()
   }, [currentWorkspace])
 
   useEffect(() => {
@@ -309,9 +348,17 @@ export default function Home() {
     if (value === null) {
       setAppIcon("/logo.webp");
       await settingsService.setAppIcon("/logo.webp", currentWorkspace.id);
+      // Update workspace record
+      await WorkspaceService.updateWorkspace(currentWorkspace.id, { icon: "/logo.webp" });
+      // Update current workspace state
+      updateCurrentWorkspace({ icon: "/logo.webp" });
     } else if (typeof value === 'string') {
       setAppIcon(value);
       await settingsService.setAppIcon(value, currentWorkspace.id);
+      // Update workspace record
+      await WorkspaceService.updateWorkspace(currentWorkspace.id, { icon: value });
+      // Update current workspace state
+      updateCurrentWorkspace({ icon: value });
     } else { // It's a ChangeEvent
       const file = value.target.files?.[0];
       if (file) {
@@ -320,11 +367,19 @@ export default function Home() {
           const base64String = reader.result as string;
           setAppIcon(base64String);
           await settingsService.setAppIcon(base64String, currentWorkspace.id);
+          // Update workspace record
+          await WorkspaceService.updateWorkspace(currentWorkspace.id, { icon: base64String });
+          // Update current workspace state
+          updateCurrentWorkspace({ icon: base64String });
         };
         reader.readAsDataURL(file);
       } else {
         setAppIcon(null);
         await settingsService.setAppIcon(null, currentWorkspace.id);
+        // Update workspace record
+        await WorkspaceService.updateWorkspace(currentWorkspace.id, { icon: null });
+        // Update current workspace state
+        updateCurrentWorkspace({ icon: null });
       }
     }
   };
@@ -543,7 +598,7 @@ export default function Home() {
           tags={tags}
           tasks={tasks}
           appName={appName}
-          setAppName={setAppName}
+          setAppName={handleSetAppName}
           appIcon={appIcon}
           setAppIcon={handleAppIconChange}
           timezone={timezone}

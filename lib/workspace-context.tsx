@@ -8,6 +8,7 @@ interface WorkspaceContextType {
   currentWorkspace: Workspace | null
   workspaces: Workspace[]
   setCurrentWorkspace: (workspace: Workspace) => void
+  updateCurrentWorkspace: (updates: Partial<Workspace>) => void
   createWorkspace: (name: string, icon?: string | null) => Promise<Workspace>
   loadWorkspaces: () => Promise<void>
 }
@@ -54,6 +55,12 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('currentWorkspaceId', workspace.id)
   }
 
+  const updateCurrentWorkspace = (updates: Partial<Workspace>) => {
+    if (currentWorkspace) {
+      setCurrentWorkspace({ ...currentWorkspace, ...updates })
+    }
+  }
+
   useEffect(() => {
     loadWorkspaces()
   }, [])
@@ -63,6 +70,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       currentWorkspace,
       workspaces,
       setCurrentWorkspace: handleSetCurrentWorkspace,
+      updateCurrentWorkspace,
       createWorkspace,
       loadWorkspaces
     }}>
